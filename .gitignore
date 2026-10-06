@@ -1,0 +1,6 @@
+.venv/
+data/
+__pycache__/
+.pytest_cache/
+*.tmp.pdf
+.DS_Store

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kopaper-web",
+      "runtimeExecutable": ".venv/bin/kopaper",
+      "runtimeArgs": ["serve"],
+      "port": 8787
+    }
+  ]
+}
