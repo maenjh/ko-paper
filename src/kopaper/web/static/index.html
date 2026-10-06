@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ko-paper</title>
+<style>
+:root{
+  --bg:#f6f5f2;--surface:#fff;--ink:#1d1d1b;--muted:#6b6a65;--line:#e4e2dc;
+  --accent:#2f5d50;--accent-ink:#fff;--accent-soft:#e6efeb;
+  --warn:#9a5b13;--warn-soft:#fbf0e1;--bad:#a33a2f;--bad-soft:#f8e6e3;--ok:#2f6a3a;--ok-soft:#e5f1e6;
+  --radius:10px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#161615;--surface:#1f1f1d;--ink:#ecebe6;--muted:#a19f97;--line:#33322f;
+  --accent:#7fb8a4;--accent-ink:#10201b;--accent-soft:#22332d;
+  --warn:#e3b06d;--warn-soft:#3a2d1c;--bad:#ec8c80;--bad-soft:#3d2320;--ok:#8fcf99;--ok-soft:#1f3323;
+}}
+*{box-sizing:border-box}
+body{margin:0;overflow-x:hidden;word-break:keep-all;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif}
+main{max-width:860px;margin:0 auto;padding:40px 16px 80px}
+header{display:flex;min-width:0;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}
+h1 small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:2px}
+.badge{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;min-width:0}
+.grid>*{min-width:0}
+.drop{border:1.5px dashed var(--line);border-radius:var(--radius);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{display:block;font-size:16px}
+.drop span{color:var(--muted);font-size:13px}
+.picked{margin-top:10px;font-size:13px;color:var(--ink);word-break:break-all}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:14px;margin-top:18px}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+select,input[type=text]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:38px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;font:inherit;font-size:14px;background:none;border:0;padding:8px 6px;color:var(--ink);cursor:pointer;min-height:38px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+details{margin-top:14px;font-size:14px}
+summary{cursor:pointer;color:var(--muted)}
+.adv{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;align-items:center}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
+.hint{font-size:13px;color:var(--muted)}
+.btn{font:inherit;font-size:14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;min-height:36px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);padding:9px 18px;font-weight:600}
+.btn.primary:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{border-color:transparent;color:var(--muted)}
+.err{color:var(--bad);font-size:14px;margin-top:10px;min-height:1em}
+h2{font-size:15px;margin:36px 0 12px;color:var(--muted);font-weight:600}
+.jobs{display:flex;flex-direction:column;gap:10px}
+.job{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.jtop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.jname{font-weight:600;word-break:break-all}
+.jmeta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.pill{font-size:12px;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pill.queued{background:var(--warn-soft);color:var(--warn)}
+.pill.running{background:var(--accent-soft);color:var(--accent)}
+.pill.done{background:var(--ok-soft);color:var(--ok)}
+.pill.failed{background:var(--bad-soft);color:var(--bad)}
+.pill.cancelled{background:var(--line);color:var(--muted)}
+.bar{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin:12px 0 6px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .6s ease}
+.jprog{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);gap:10px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.jerr{font-size:13px;color:var(--bad);margin-top:8px;word-break:break-all}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:24px;border:1px dashed var(--line);border-radius:var(--radius)}
+/* usage */
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.usage{font-size:12px;color:var(--muted)}
+.usage.limit{color:var(--warn);font-weight:600}
+/* glossary dialog */
+dialog{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);padding:0;width:min(720px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.dhead{padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+.dhead h3{margin:0 0 4px;font-size:16px;word-break:break-all}
+.dtools{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.dtools input{flex:1;min-width:160px}
+.dbody{overflow:auto;max-height:55vh;padding:6px 18px}
+.grow{display:grid;grid-template-columns:1fr 1fr 36px;gap:6px;padding:4px 0}
+.grow input{width:100%;min-height:34px;padding:6px 8px}
+.grow button{min-height:34px;padding:0;justify-content:center}
+.grow.head{font-size:12px;color:var(--muted);position:sticky;top:0;background:var(--surface);padding-top:8px}
+.dfoot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 18px;border-top:1px solid var(--line)}
+.dfoot div{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:520px){.grow{grid-template-columns:1fr 1fr 32px}.hdr-right{align-items:flex-start}}
+@media (max-width:520px){main{padding-top:24px}.card{padding:16px}.drop{padding:22px 12px}.row{flex-direction:column;align-items:stretch}.btn.primary{justify-content:center}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ko-paper<small>영문 논문 PDF를 그림과 레이아웃 그대로 한글로 옮깁니다</small></h1>
+    <div class="hdr-right">
+      <span class="badge" id="backend">연결 중</span>
+      <span class="usage" id="usage" title="이 컴퓨터에서 ko-paper가 보낸 Claude 호출만 집계합니다. 구독의 남은 한도는 Claude가 공개하지 않습니다."></span>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="PDF 파일 선택">
+      <strong>PDF를 여기에 끌어다 놓거나 클릭해서 고르세요</strong>
+      <span>여러 편을 한 번에 올리면 차례대로 번역합니다 · 최대 100MB</span>
+      <div class="picked" id="picked"></div>
+    </div>
+    <input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
+
+    <div class="grid">
+      <label class="f">모델
+        <div class="seg" id="model"></div>
+      </label>
+      <label class="f">출력
+        <div class="seg" id="output">
+          <button type="button" data-v="both" class="on">둘 다</button>
+          <button type="button" data-v="mono">한글본</button>
+          <button type="button" data-v="dual">병기본</button>
+        </div>
+      </label>
+      <label class="f">분야 용어집
+        <select id="domain"></select>
+      </label>
+      <label class="f">페이지 <input type="text" id="pages" placeholder="전체 (예: 1-3,5)" inputmode="numeric"></label>
+    </div>
+
+    <details>
+      <summary>고급 설정</summary>
+      <div class="adv">
+        <label class="f">내 용어집 CSV (source,target)<input type="file" id="glossary" accept=".csv,text/csv"></label>
+        <label class="hint"><input type="checkbox" id="reextract"> 이 논문의 저장된 용어집을 무시하고 다시 추출</label>
+        <label class="hint"><input type="checkbox" id="review"> 2차 검토 (Claude가 번역을 한 번 더 다듬음 · 사용량 약 2배)</label>
+        <label class="hint"><input type="checkbox" id="ocr"> 스캔본 PDF 글자 인식 (실험 기능, 품질 낮음)</label>
+      </div>
+    </details>
+
+    <div class="row">
+      <span class="hint">sonnet이 기본입니다. 17쪽 논문 기준 약 6분이 걸립니다.</span>
+      <button class="btn primary" id="go" disabled>번역 시작</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+  </section>
+
+  <h2>작업</h2>
+  <div class="jobs" id="jobs"><div class="empty">아직 번역한 논문이 없습니다.</div></div>
+</main>
+
+<dialog id="gdlg" aria-labelledby="gtitle">
+  <div class="dhead">
+    <h3 id="gtitle">용어집 편집</h3>
+    <div class="hint" id="gsub">고친 용어는 이 논문에 계속 적용됩니다. 분야 용어집보다 우선합니다.</div>
+    <div class="dtools">
+      <input type="text" id="gsearch" placeholder="용어 찾기">
+      <button class="btn" id="gadd" type="button">용어 추가</button>
+    </div>
+  </div>
+  <div class="dbody" id="grows"></div>
+  <div class="dfoot">
+    <div><button class="btn ghost" id="greset" type="button">자동 추출로 되돌리기</button></div>
+    <div>
+      <button class="btn" id="gcancel" type="button">닫기</button>
+      <button class="btn" id="gsave" type="button">저장</button>
+      <button class="btn primary" id="gsaverun" type="button">저장 후 다시 번역</button>
+    </div>
+  </div>
+  <div class="err" id="gerr" style="padding:0 18px 12px"></div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const STATUS = {queued:"대기", running:"진행 중", done:"완료", failed:"실패", cancelled:"취소됨"};
+let files = [], state = {model:"sonnet", output:"both"}, timer = null;
+
+function seg(el, key){
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button"); if(!b) return;
+    el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+    state[key] = b.dataset.v;
+  });
+}
+seg($("#output"), "output");
+
+async function loadOptions(){
+  try{
+    const o = await (await fetch("/api/options")).json();
+    $("#backend").textContent = o.backend === "claude-code" ? "Claude 구독 · 개인용" : "Claude API";
+    $("#model").innerHTML = o.models.map(m => `<button type="button" data-v="${m}" class="${m===state.model?"on":""}">${m}</button>`).join("");
+    seg($("#model"), "model");
+    $("#domain").innerHTML = o.domains.map(d => `<option value="${esc(d)}" ${d===o.default_domain?"selected":""}>${esc(d)}</option>`).join("") + `<option value="none">사용 안 함</option>`;
+  }catch{ $("#backend").textContent = "서버 연결 실패"; }
+}
+
+function pick(list){
+  files = [...list].filter(f => f.name.toLowerCase().endsWith(".pdf") || f.type === "application/pdf");
+  $("#picked").textContent = files.length ? files.map(f => f.name).join(", ") : (list.length ? "PDF 파일만 올릴 수 있습니다." : "");
+  $("#go").disabled = !files.length;
+}
+const drop = $("#drop");
+drop.addEventListener("click", () => $("#file").click());
+drop.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); $("#file").click(); }});
+$("#file").addEventListener("change", e => pick(e.target.files));
+["dragenter","dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => pick(e.dataTransfer.files));
+
+$("#go").addEventListener("click", async () => {
+  $("#err").textContent = ""; $("#go").disabled = true;
+  for(const f of files){
+    const fd = new FormData();
+    fd.append("file", f);
+    fd.append("model", state.model);
+    fd.append("output", state.output);
+    fd.append("domain", $("#domain").value);
+    fd.append("pages", $("#pages").value);
+    fd.append("reextract_glossary", $("#reextract").checked);
+    fd.append("ocr", $("#ocr").checked);
+    fd.append("review", $("#review").checked);
+    const g = $("#glossary").files[0]; if(g) fd.append("glossary", g);
+    const r = await fetch("/api/jobs", {method:"POST", body:fd});
+    if(!r.ok){ $("#err").textContent = `${f.name}: ${(await r.json().catch(()=>({}))).detail || r.statusText}`; }
+  }
+  files = []; $("#file").value = ""; $("#picked").textContent = "";
+  refresh();
+});
+
+function dur(sec){
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec/60), s = sec%60;
+  return m ? `${m}분 ${s}초` : `${s}초`;
+}
+function jobHTML(j){
+  const now = Date.now()/1000, o = j.options || {}, r = j.result;
+  const meta = [o.model + (o.review ? " + 2차 검토" : ""), o.output==="both"?"한글본+병기본":o.output==="mono"?"한글본":"병기본", o.pages?`${o.pages}쪽`:null, o.domain!=="none"?o.domain:null].filter(Boolean).join(" · ");
+  let body = "";
+  if(j.status === "running"){
+    const el = j.started ? now - j.started : 0;
+    const eta = j.progress > 3 ? el*(100-j.progress)/j.progress : null;
+    body = `<div class="bar"><i style="width:${j.progress}%"></i></div>
+      <div class="jprog"><span>${esc(j.stage)} · ${j.progress.toFixed(0)}%</span><span>${dur(el)} 경과${eta!==null?` · 약 ${dur(eta)} 남음`:""}</span></div>`;
+  }else if(j.status === "queued"){
+    body = `<div class="jprog" style="margin-top:8px"><span>${j.queue_position ? `대기열 ${j.queue_position}번째` : "대기 중"}</span></div>`;
+  }else if(j.status === "done" && r){
+    const refs = r.restored_ref_pages?.length ? ` · 참고문헌 원본 유지(${r.restored_ref_pages.join(", ")}쪽)` : "";
+    const use = r.calls ? `호출 ${r.calls}회 · 토큰 ${((r.input_tokens+r.output_tokens)/1000).toFixed(0)}K` : "이전 번역 재사용";
+    body = `<div class="jprog" style="margin-top:8px"><span>${dur(r.seconds)} · ${use}${refs}</span></div>`;
+  }
+  const f = k => `/api/jobs/${j.id}/files/${k}`;
+  const acts = [];
+  if(j.status === "done" && r){
+    if(r.mono_pdf){ acts.push(`<a class="btn" href="${f("mono")}?inline=1" target="_blank" rel="noopener">한글본 보기</a>`, `<a class="btn" href="${f("mono")}">한글본 받기</a>`); }
+    if(r.dual_pdf) acts.push(`<a class="btn" href="${f("dual")}">병기본 받기</a>`);
+    if(r.paper_glossary) acts.push(`<button class="btn" data-act="glossary" data-id="${j.id}">용어집 편집</button>`, `<a class="btn ghost" href="${f("glossary")}">용어집 받기</a>`);
+  }
+  if(j.status === "done" || j.status === "failed" || j.status === "cancelled") acts.push(`<button class="btn ghost" data-act="retry" data-id="${j.id}">다시 번역</button>`);
+  if(j.status === "queued" || j.status === "running") acts.push(`<button class="btn ghost" data-act="cancel" data-id="${j.id}">취소</button>`);
+  else acts.push(`<button class="btn ghost" data-act="delete" data-id="${j.id}">삭제</button>`);
+  return `<article class="job">
+    <div class="jtop"><div><div class="jname">${esc(j.name)}</div><div class="jmeta">${esc(meta)}</div></div>
+    <span class="pill ${j.status}">${STATUS[j.status] || j.status}</span></div>
+    ${body}
+    ${j.error ? `<div class="jerr">${esc(j.error)}</div>` : ""}
+    <div class="acts">${acts.join("")}</div>
+  </article>`;
+}
+
+let jobsById = {};
+$("#jobs").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-act]"); if(!b) return;
+  if(b.dataset.act === "glossary") return openGlossary(jobsById[b.dataset.id]);
+  if(b.dataset.act === "retry"){
+    b.disabled = true;
+    const r = await fetch(`/api/jobs/${b.dataset.id}/retry`, {method:"POST"});
+    if(!r.ok) $("#err").textContent = (await r.json().catch(()=>({}))).detail || "다시 번역할 수 없습니다.";
+    return refresh();
+  }
+  if(b.dataset.act === "delete" && !confirm("이 작업과 결과 파일을 삭제할까요?")) return;
+  b.disabled = true;
+  await fetch(`/api/jobs/${b.dataset.id}${b.dataset.act === "cancel" ? "/cancel" : ""}`, {method: b.dataset.act === "cancel" ? "POST" : "DELETE"});
+  refresh();
+});
+
+async function refresh(){
+  clearTimeout(timer);
+  let active = false;
+  try{
+    const jobs = await (await fetch("/api/jobs")).json();
+    active = jobs.some(j => j.status === "queued" || j.status === "running");
+    jobsById = Object.fromEntries(jobs.map(j => [j.id, j]));
+    $("#jobs").innerHTML = jobs.length ? jobs.map(jobHTML).join("") : `<div class="empty">아직 번역한 논문이 없습니다.</div>`;
+  }catch{}
+  timer = setTimeout(refresh, active ? 1500 : 10000);
+}
+function fmtTok(n){ return n >= 1e6 ? (n/1e6).toFixed(1)+"M" : Math.round(n/1e3)+"K"; }
+async function loadUsage(){
+  try{
+    const u = await (await fetch("/api/usage")).json(), w = u.h5, el = $("#usage");
+    el.classList.toggle("limit", u.limited_now);
+    el.textContent = u.limited_now ? "사용 한도 도달 · 자동으로 재시도 중"
+      : `최근 5시간 · 호출 ${w.calls}회 · 토큰 ${fmtTok(w.input_tokens + w.output_tokens)}`;
+  }catch{}
+}
+
+let gJob = null, gRows = [];
+function gRender(){
+  const q = $("#gsearch").value.trim().toLowerCase(), box = $("#grows");
+  box.replaceChildren();
+  const head = document.createElement("div"); head.className = "grow head";
+  head.innerHTML = "<span>영문</span><span>한글</span><span></span>"; box.append(head);
+  gRows.forEach((r, i) => {
+    if(q && !(r.source.toLowerCase().includes(q) || r.target.toLowerCase().includes(q))) return;
+    const row = document.createElement("div"); row.className = "grow";
+    const a = document.createElement("input"), b = document.createElement("input"), del = document.createElement("button");
+    a.value = r.source; b.value = r.target; a.setAttribute("aria-label","영문 용어"); b.setAttribute("aria-label","한글 번역");
+    a.oninput = () => r.source = a.value; b.oninput = () => r.target = b.value;
+    del.className = "btn ghost"; del.type = "button"; del.textContent = "×"; del.title = "삭제";
+    del.onclick = () => { gRows.splice(i, 1); gRender(); };
+    row.append(a, b, del); box.append(row);
+  });
+  $("#gsub").textContent = `${gRows.length}개 용어 · 고친 용어는 이 논문에 계속 적용되고 분야 용어집보다 우선합니다.`;
+}
+const pidOf = j => j.options.paper_id || j.result?.paper_id;
+async function openGlossary(j){
+  gJob = j; $("#gerr").textContent = ""; $("#gsearch").value = "";
+  $("#gtitle").textContent = `용어집 편집 · ${j.name}`;
+  const r = await fetch(`/api/papers/${pidOf(j)}/glossary`);
+  if(!r.ok){ $("#err").textContent = (await r.json().catch(()=>({}))).detail || "용어집을 불러오지 못했습니다."; return; }
+  const g = await r.json();
+  gRows = g.entries.map(e => ({source:e.source, target:e.target}));
+  $("#greset").hidden = !g.edited;
+  gRender(); $("#gdlg").showModal();
+}
+async function gSave(){
+  const r = await fetch(`/api/papers/${pidOf(gJob)}/glossary`, {method:"PUT", headers:{"content-type":"application/json"}, body: JSON.stringify({entries: gRows})});
+  if(!r.ok){ $("#gerr").textContent = (await r.json().catch(()=>({}))).detail || "저장하지 못했습니다."; return false; }
+  return true;
+}
+$("#gsearch").addEventListener("input", gRender);
+$("#gadd").addEventListener("click", () => { gRows.unshift({source:"", target:""}); $("#gsearch").value = ""; gRender(); $("#grows input")?.focus(); });
+$("#gcancel").addEventListener("click", () => $("#gdlg").close());
+$("#gsave").addEventListener("click", async () => { if(await gSave()) $("#gdlg").close(); });
+$("#gsaverun").addEventListener("click", async () => {
+  if(!(await gSave())) return;
+  await fetch(`/api/jobs/${gJob.id}/retry`, {method:"POST"});
+  $("#gdlg").close(); refresh();
+});
+$("#greset").addEventListener("click", async () => {
+  if(!confirm("고친 내용을 버리고 자동 추출 용어집으로 되돌릴까요?")) return;
+  await fetch(`/api/papers/${pidOf(gJob)}/glossary`, {method:"DELETE"});
+  openGlossary(gJob);
+});
+
+loadOptions(); refresh(); loadUsage(); setInterval(loadUsage, 15000);
+</script>
+</body>
+</html>

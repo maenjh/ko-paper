@@ -1,0 +1,51 @@
+source,target,tgt_lng
+large language model,대규모 언어 모델,ko
+language model,언어 모델,ko
+fine-tuning,미세 조정,ko
+pre-training,사전 학습,ko
+prompt,프롬프트,ko
+prompting,프롬프팅,ko
+in-context learning,맥락 내 학습,ko
+reinforcement learning,강화 학습,ko
+reinforcement learning from human feedback,인간 피드백 기반 강화 학습,ko
+reward model,보상 모델,ko
+preference data,선호 데이터,ko
+alignment,정렬,ko
+hallucination,환각,ko
+benchmark,벤치마크,ko
+baseline,베이스라인,ko
+ablation study,절제 연구,ko
+ground truth,정답,ko
+embedding,임베딩,ko
+attention,어텐션,ko
+self-attention,셀프 어텐션,ko
+encoder,인코더,ko
+decoder,디코더,ko
+loss function,손실 함수,ko
+objective function,목적 함수,ko
+gradient,기울기,ko
+overfitting,과적합,ko
+generalization,일반화,ko
+inference,추론,ko
+training set,학습 세트,ko
+test set,테스트 세트,ko
+validation set,검증 세트,ko
+hyperparameter,하이퍼파라미터,ko
+state-of-the-art,최신,ko
+recommender system,추천 시스템,ko
+cold-start,콜드 스타트,ko
+user study,사용자 연구,ko
+participant,참여자,ko
+semi-structured interview,반구조화 인터뷰,ko
+thematic analysis,주제 분석,ko
+within-subjects,피험자 내,ko
+between-subjects,피험자 간,ko
+usability,사용성,ko
+human-computer interaction,인간-컴퓨터 상호작용,ko
+human-AI interaction,인간-AI 상호작용,ko
+trust,신뢰,ko
+user experience,사용자 경험,ko
+design implication,설계 시사점,ko
+limitation,한계,ko
+future work,향후 연구,ko
+contribution,기여,ko
