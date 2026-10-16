@@ -202,3 +202,14 @@ def test_echo_backend_answers_babeldoc_formats():
     assert echo_answer("translate it into ko. Input:\n\nSome text") == ECHO_MARK + "Some text"
     assert echo_answer("Rules...\n\nNow translate the following text:\n\nA paragraph.") == ECHO_MARK + "A paragraph."
     assert echo_answer("You are an expert multilingual terminologist. Extract key terms...") == "[]"
+
+
+def test_progress_bar_lines_unicode_and_ascii():
+    from kopaper.pipeline import _BAR
+
+    for line in ("Translate Paragraphs (1/1)          ━━━━━╸━━━━━ 20/54   0:00:12 0:00:30",
+                 "Translate Paragraphs (1/1)          -----------  20/54   0:00:12 0:00:30",  # Windows
+                 "translate                           -- ---------- 33/100 0:00:12 0:00:30"):
+        m = _BAR.match(line)
+        assert m and m["name"].strip() in ("Translate Paragraphs (1/1)", "translate"), line
+        assert (int(m["done"]), int(m["total"])) in ((20, 54), (33, 100))

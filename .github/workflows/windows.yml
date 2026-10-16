@@ -23,7 +23,7 @@ jobs:
         shell: powershell
         run: |
           git branch -f ci-under-test HEAD
-          # A folder with a space and Korean letters ("한글"), built from code points to keep this file ASCII.
+          # A folder with a space and Korean letters, built from code points to keep this file ASCII.
           $ko = -join [char[]](0xD55C, 0xAE00)
           $src = Join-Path $env:RUNNER_TEMP "ko paper $ko\src"
           "KOPAPER_SRC=$src" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
