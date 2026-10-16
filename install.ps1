@@ -94,11 +94,16 @@ function Install-KoPaper {
     if ($wantClaude) { Install-Skill $ClaudeSkills }
     if ($wantCodex) { Install-Skill $CodexSkills }
 
-    # Launcher. cmd reads .cmd files in the OEM code page, so refer to the home folder by variable, not by name.
+    # Launcher. cmd reads .cmd files in the OEM code page, so the .cmd stays ASCII and only points to
+    # ~\.ko-paper\run.ps1; that file holds the real path (Korean folder names too) as UTF-8 with a BOM,
+    # which Windows PowerShell 5.1 reads correctly.
     New-Item -ItemType Directory -Force $BinDir | Out-Null
     $wrapper = Join-Path $Src 'skills\ko-paper\scripts\kopaper.ps1'
-    if ($wrapper.StartsWith($HOME)) { $wrapper = '%USERPROFILE%' + $wrapper.Substring($HOME.Length) }
-    $launcher = "@echo off`r`npowershell -NoProfile -ExecutionPolicy Bypass -File `"$wrapper`" %*`r`n"
+    $runPs1 = Join-Path $HOME '.ko-paper\run.ps1'
+    New-Item -ItemType Directory -Force (Split-Path $runPs1) | Out-Null
+    $run = "# Written by install.ps1: runs the installed ko-paper wrapper.`r`n& '$($wrapper.Replace("'", "''"))' @args`r`nexit `$LASTEXITCODE`r`n"
+    [IO.File]::WriteAllText($runPs1, $run, (New-Object Text.UTF8Encoding $true))
+    $launcher = "@echo off`r`npowershell -NoProfile -ExecutionPolicy Bypass -File `"%USERPROFILE%\.ko-paper\run.ps1`" %*`r`n"
     [IO.File]::WriteAllText((Join-Path $BinDir 'ko-paper.cmd'), $launcher, [Text.Encoding]::ASCII)
     Write-Host "  command installed: $(Join-Path $BinDir 'ko-paper.cmd')"
 

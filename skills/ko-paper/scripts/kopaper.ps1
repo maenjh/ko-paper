@@ -44,6 +44,7 @@ function Setup {
         'claude-code' { if (-not (Need 'claude')) { Fail 'KOPAPER_BACKEND=claude-code but the claude CLI is missing' } }
         'codex' { if (-not (Need 'codex')) { Fail 'KOPAPER_BACKEND=codex but the codex CLI is missing' } }
         'anthropic-api' { }
+        'echo' { }  # CI only, does not translate
         { -not $_ } { Fail 'neither Claude Code (claude) nor Codex (codex) is installed; install and log in to one' }
         default { Fail "unknown KOPAPER_BACKEND=$($env:KOPAPER_BACKEND) (claude-code, codex, anthropic-api)" }
     }

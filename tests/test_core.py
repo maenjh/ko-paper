@@ -138,6 +138,7 @@ def test_source_language_prompts():
     assert not _HEADING.match("references to prior work")
 
 
+@pytest.mark.skipif(__import__("os").name == "nt", reason="the fake codex is a /bin/sh script")
 def test_codex_backend_parses_events(tmp_path, monkeypatch):
     from kopaper.proxy import backends
 
@@ -190,3 +191,13 @@ def test_limit_regex_and_foreign_appendix():
         assert not _LIMIT_RE.search(msg), msg
     for h in ("Appendix A", "Anhang A: Beweise", "Annexe A", "Apéndice A", "付録 A", "Приложение А"):
         assert _APPENDIX.match(h), h
+
+
+def test_echo_backend_answers_babeldoc_formats():
+    from kopaper.proxy.backends import ECHO_MARK, echo_answer
+
+    example = '[{"id": 0, "input": "example"}]'
+    batch = 'Example:\n' + example + '\nInput:\n' + json.dumps([{"id": 0, "input": "Hello {v1}"}, {"id": 1, "input": "World"}])
+    assert json.loads(echo_answer(batch)) == [{"id": 0, "output": ECHO_MARK + "Hello {v1}"}, {"id": 1, "output": ECHO_MARK + "World"}]
+    assert echo_answer("translate it into ko. Input:\n\nSome text") == ECHO_MARK + "Some text"
+    assert echo_answer("extract terms from this page") == "[]"

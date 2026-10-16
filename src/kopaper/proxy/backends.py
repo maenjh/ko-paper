@@ -192,6 +192,37 @@ def parse_codex_events(stdout: str, stderr: str = "") -> Completion:
     return Completion(text, int(usage.get("input_tokens", 0)), int(usage.get("output_tokens", 0)))
 
 
+class EchoBackend:
+    """Offline stand-in for CI: returns each paragraph with a Korean marker, so the whole pipeline
+    (BabelDOC, fonts, file paths) runs without any login. It does not translate."""
+
+    name = "echo"
+
+    async def complete(self, system: str, prompt: str, model: str) -> Completion:
+        return Completion(echo_answer(prompt), 0, 0)
+
+
+ECHO_MARK = "번역 "
+
+
+def echo_answer(prompt: str) -> str:
+    # BabelDOC batches: the last JSON list of {"id", "input"} in the prompt (earlier ones are examples).
+    batch = None
+    decoder = json.JSONDecoder()
+    for m in re.finditer(r"\[\s*\{", prompt):
+        try:
+            items, _ = decoder.raw_decode(prompt, m.start())
+        except ValueError:
+            continue
+        if isinstance(items, list) and items and all(isinstance(i, dict) and "id" in i and "input" in i for i in items):
+            batch = items
+    if batch is not None:
+        return json.dumps([{"id": i["id"], "output": ECHO_MARK + str(i["input"])} for i in batch], ensure_ascii=False)
+    if "Input:" in prompt:  # single-paragraph fallback: "... Input:\n\n<text>"
+        return ECHO_MARK + prompt.rsplit("Input:", 1)[1].strip()
+    return "[]"  # term extraction: no terms
+
+
 def make_backend(name: str) -> TranslatorBackend:
     if name == "claude-code":
         return ClaudeCodeBackend()
@@ -199,4 +230,6 @@ def make_backend(name: str) -> TranslatorBackend:
         return AnthropicAPIBackend()
     if name == "codex":
         return CodexBackend()
+    if name == "echo":
+        return EchoBackend()
     raise ValueError(f"unknown backend: {name}")

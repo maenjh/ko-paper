@@ -51,7 +51,7 @@ setup() {
     echo "✗ uv is missing: curl -LsSf https://astral.sh/uv/install.sh | sh" >&2; ok=0
   fi
   case "${KOPAPER_BACKEND:-}" in
-    claude-code|codex|anthropic-api) ;;
+    claude-code|codex|anthropic-api|echo) ;;  # echo: CI only, does not translate
     "") echo "✗ neither Claude Code (claude) nor Codex (codex) is installed; install and log in to one" >&2; ok=0 ;;
     *) echo "✗ unknown KOPAPER_BACKEND=$KOPAPER_BACKEND (claude-code, codex, anthropic-api)" >&2; ok=0 ;;
   esac

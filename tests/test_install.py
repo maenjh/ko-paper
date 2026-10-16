@@ -27,6 +27,8 @@ def run(cmd, env, **kw):
 
 @pytest.fixture
 def sandbox(tmp_path):
+    if os.name == "nt":
+        pytest.skip("install.sh is the macOS/Linux installer; CI checks install.ps1 on Windows")
     if not shutil.which("git"):
         pytest.skip("git required")
     # Snapshot the working tree (tracked + new files) as a git repo to install from.

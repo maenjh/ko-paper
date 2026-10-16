@@ -1,0 +1,5 @@
+# LF everywhere: Git Bash breaks on CRLF shell scripts, and the English prompt must stay byte-identical
+# (translation cache keys). PowerShell and cmd read LF files fine.
+* text=auto eol=lf
+*.png binary
+*.pdf binary
