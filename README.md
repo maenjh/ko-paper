@@ -38,7 +38,7 @@ Claude Code나 Codex에 스킬로 설치하면 "이 논문 번역해줘" 한마�
 ```text
 ko-paper(https://github.com/maenjh/ko-paper)를 이 컴퓨터에 설치해 줘. 나에게 질문하지 말고 끝까지 진행해.
 1. 운영체제를 직접 확인해(uname 또는 $env:OS). 사용자에게 묻지 않는다.
-2. macOS·Linux·WSL이면 실행:
+2. macOS·Linux면 실행:
    curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash
    Windows PowerShell이면 실행:
    irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex
@@ -62,7 +62,7 @@ curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | b
 # 한쪽에만:  ... | bash -s -- --claude   또는   ... | bash -s -- --codex
 ```
 
-**Windows** (PowerShell, WSL 없이)
+**Windows** (PowerShell)
 
 ```powershell
 irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex
@@ -149,27 +149,12 @@ ko-paper가 줄이려고 하는 것:
 - Python 3.12로 고정한다. 가장 널리 쓰이는 빌드라 SAC의 평판 판정을 받을 가능성이 가장 높다.
 - 설치마다 새로 생기는 `kopaper.exe` 대신 `python -m kopaper`로 실행한다.
 
-그래도 막히면 보안 기능인 **SAC를 끄지 말고** 아래 둘 중 하나를 쓴다.
+그래도 막히면 보안 기능인 **SAC를 끄지 말고** 간이 모드를 쓴다.
 
 **간이 모드 (설치 없음)** — Claude Code나 Codex에서 스킬로 번역을 요청하면, doctor가 차단을 감지했을 때
 에이전트가 BabelDOC 없이 직접 번역한다. 원문 구조(제목·문단·표·캡션·수식)를 살린 한글 PDF
 (`<이름>.ko.lite.pdf`)를 Edge로 만든다. 원문 레이아웃(2단, 페이지 위치)과 그림 이미지는 유지하지 않는다.
 "간단히 번역해줘", "설치 없이 번역해줘"라고 하면 다른 OS에서도 간이 모드로 번역한다.
-
-**WSL (레이아웃 유지)** — 원문 레이아웃이 필요하면 WSL 안에서 쓴다. WSL의 Linux 프로그램에는
-SAC가 적용되지 않는다.
-
-```powershell
-wsl --install          # 관리자 PowerShell, 끝나면 재부팅
-```
-
-재부팅 후 시작 메뉴의 **Ubuntu**에서 macOS·Linux용 설치 명령을 실행한다.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-codex   # Claude면 --with-claude-code
-ko-paper        # Windows 브라우저에서 http://127.0.0.1:8787 이 열리지 않으면 직접 연다
-ko-paper translate /mnt/c/Users/<이름>/Downloads/paper.pdf
-```
 
 ## 직접 설치 (CLI·웹 UI)
 
