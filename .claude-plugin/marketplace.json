@@ -1,0 +1,18 @@
+{
+  "name": "ko-paper",
+  "owner": { "name": "maenjh" },
+  "metadata": {
+    "description": "영문 논문 PDF를 레이아웃 그대로 한글로 번역하는 스킬 — layout-preserving English→Korean paper translator",
+    "version": "0.1.0",
+    "pluginRoot": "."
+  },
+  "plugins": [
+    {
+      "name": "ko-paper",
+      "source": "./",
+      "version": "0.1.0",
+      "description": "Translate English paper PDFs into Korean, keeping figures, tables, equations and layout in place.",
+      "keywords": ["pdf", "translation", "korean", "paper", "논문", "번역"]
+    }
+  ]
+}
