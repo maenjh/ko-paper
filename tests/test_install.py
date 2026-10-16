@@ -15,7 +15,8 @@ STUBS = {
     # uv sync → the venv gets fakepython; `uv tool dir` → a BabelDOC tool env with fakepython.
     "uv": '#!/bin/sh\nd="$(dirname "$0")"\n'
           'if [ "$1" = sync ]; then mkdir -p .venv/bin; cp "$d/fakepython" .venv/bin/python; fi\n'
-          'if [ "$1 $2" = "tool dir" ]; then echo "$d/tools"; fi\n',
+          'if [ "$1 $2" = "tool dir" ]; then echo "$d/tools"; fi\n'
+          'if [ "$1 $2" = "tool list" ]; then echo "babeldoc v0.5.24"; fi\n',
     "claude": "#!/bin/sh\nexit 0\n",  # `claude auth status` → logged in
     "babeldoc": "#!/bin/sh\nexit 0\n",
 }
@@ -27,6 +28,8 @@ def run(cmd, env, **kw):
 
 @pytest.fixture
 def sandbox(tmp_path):
+    if os.name == "nt":
+        pytest.skip("install.sh is the macOS/Linux installer; CI checks install.ps1 on Windows")
     if not shutil.which("git"):
         pytest.skip("git required")
     # Snapshot the working tree (tracked + new files) as a git repo to install from.

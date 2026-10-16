@@ -174,7 +174,7 @@ ko-paper translate /mnt/c/Users/<이름>/Downloads/paper.pdf
 ## 직접 설치 (CLI·웹 UI)
 
 - Claude Code 로그인 (`claude` 실행 후 `/login`)
-- BabelDOC: `uv tool install babeldoc`
+- BabelDOC: `uv tool install --python 3.12 "babeldoc==0.5.24" --with "bitstring<5"` (레이아웃 보정이 이 버전에 맞춰져 있다)
 - 이 저장소: `uv sync` (API 백엔드도 쓰려면 `uv sync --extra api`)
 
 ## 웹 UI
