@@ -1,6 +1,6 @@
 ---
 name: ko-paper
-description: Translate an academic paper PDF (English by default; also German, French, Spanish, Italian, Portuguese, Dutch, Russian, Japanese, Chinese) into Korean while keeping figures, tables, equations and page layout in place (BabelDOC for layout, Claude for translation). Produces a Korean-only PDF and a side-by-side original/Korean PDF next to the input. Use when the user hands over a paper or reading PDF and wants it in Korean — "이 논문 번역해줘", "이 논문 해줘", "한글로 바꿔줘", "PDF 번역", "논문 한글본", "영어 논문 한국어로", "독일어 논문 번역", "리딩 번역", "translate this paper to Korean". Not for summarising a paper, translating plain text in chat, or translating out of Korean.
+description: Translate an academic paper PDF (English by default; also German, French, Spanish, Italian, Portuguese, Dutch, Russian, Japanese, Chinese) into Korean while keeping figures, tables, equations and page layout in place (BabelDOC for layout, Claude for translation). Produces a Korean-only PDF and a side-by-side original/Korean PDF next to the input; when BabelDOC can't run (e.g. Windows Smart App Control blocks it) a lite mode translates without installing anything. Use when the user hands over a paper or reading PDF and wants it in Korean — "이 논문 번역해줘", "이 논문 해줘", "한글로 바꿔줘", "PDF 번역", "논문 한글본", "영어 논문 한국어로", "독일어 논문 번역", "리딩 번역", "translate this paper to Korean". Not for summarising a paper, translating plain text in chat, or translating out of Korean.
 ---
 
 # ko-paper — 레이아웃을 유지하는 논문 → 한국어 번역
@@ -27,6 +27,9 @@ Windows의 Claude Code는 Git Bash로 실행하므로 `kopaper.sh` 그대로 된
    말했으면 그 언어, 아니면 첫 페이지 텍스트를 보고 판단한다. 영어가 아니면 `-l <코드>`를 붙인다.
 2. **처음이면 점검.** `"$K" doctor`. 실패 메시지(uv 없음, claude 없음)는 그대로 사용자에게
    전하고 설치 방법을 안내한다. 사용자의 셸 설정을 임의로 바꾸지 않는다.
+   - doctor가 `could not load its compiled modules`(Windows Smart App Control 차단 등)로 실패하거나
+     BabelDOC을 설치할 수 없으면, 묻지 말고 **간이 모드**로 번역한다. 절차는 이 폴더의 `lite.md`를 따른다.
+     사용자가 "간단히", "설치 없이"를 원할 때도 간이 모드를 쓴다.
 3. **번역 실행 — 백그라운드로.** 30쪽 논문에 5~10분 걸린다.
    ```bash
    "$K" translate "/path/to/paper.pdf"

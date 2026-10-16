@@ -97,7 +97,8 @@ def test_update_keeps_chosen_agent(sandbox):
     assert not (claude_skill / ".kopaper-home").exists(), "update installed into an agent the user did not pick"
 
 
-@pytest.mark.parametrize("script", ["install.ps1", "skills/ko-paper/scripts/kopaper.ps1"])
+@pytest.mark.parametrize("script", ["install.ps1", "skills/ko-paper/scripts/kopaper.ps1",
+                                    "skills/ko-paper/scripts/html2pdf.ps1"])
 def test_powershell_scripts_ascii_and_parse(script):
     path = REPO / script
     path.read_bytes().decode("ascii")  # Windows PowerShell 5.1 misreads non-ASCII in BOM-less files
@@ -138,3 +139,4 @@ def test_doctor_reports_blocked_native_module(sandbox):
     r = run([str(home / ".local" / "bin" / "ko-paper"), "doctor"], {**env, "FAKE_IMPORT_ERROR": err})
     assert r.returncode == 1 and "kopaper ready" not in r.stdout
     assert "ko-paper could not load its compiled modules" in r.stderr and "Smart App Control" in r.stderr
+    assert "Lite mode" in r.stderr

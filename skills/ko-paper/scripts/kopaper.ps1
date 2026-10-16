@@ -81,6 +81,7 @@ function NativeCheck($what, $python, $imports) {
         [Console]::Error.WriteLine('  Windows Smart App Control blocked an unsigned file. Do not turn it off:')
         [Console]::Error.WriteLine('  see https://github.com/maenjh/ko-paper#windows-smart-app-control')
     }
+    [Console]::Error.WriteLine('  Lite mode still works without these modules (no layout): see lite.md in the skill folder.')
     exit 1
 }
 
