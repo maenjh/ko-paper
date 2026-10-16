@@ -17,6 +17,7 @@ PROXY_URL = f"http://{PROXY_HOST}:{PROXY_PORT}/v1"
 
 # "claude-code" = Claude subscription via local `claude -p` (personal use only)
 # "anthropic-api" = pay-as-you-go API key (required for any shared/public deployment)
+# "codex" = ChatGPT plan via local `codex exec` (personal use only)
 BACKEND = os.environ.get("KOPAPER_BACKEND", "claude-code")
 BABELDOC_BIN = os.environ.get("KOPAPER_BABELDOC_BIN", "babeldoc")
 

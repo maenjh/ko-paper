@@ -1,19 +1,37 @@
 # ko-paper
 
 논문 PDF(기본 영어, 독일어·프랑스어·일본어 등 10개 언어)를 그림·표·수식 위치를 유지한 채 한글 PDF로 번역한다.
-레이아웃 처리는 [BabelDOC](https://github.com/funstory-ai/BabelDOC), 번역은 Claude가 맡는다.
+레이아웃 처리는 [BabelDOC](https://github.com/funstory-ai/BabelDOC), 번역은 Claude(또는 Codex)가 맡는다.
 Claude Code나 Codex에 스킬로 설치하면 "이 논문 번역해줘" 한마디로 쓸 수 있다.
 
-> **각자 자기 컴퓨터에서, 자기 Claude 계정으로 쓰는 도구다.** 기본 백엔드는 로컬에 로그인된
-> Claude Code(`claude -p`)라서 번역에 쓰는 사용량은 실행한 사람의 구독에서 나간다.
-> 이 백엔드로 서버를 띄워 다른 사람에게 번역을 제공하면 안 된다. 그런 용도라면
+![원문과 ko-paper 한글본 비교](docs/img/example-page.png)
+
+<sub>예시는 이 README를 위해 직접 쓴 샘플 논문이다([HTML](docs/sample/sample-paper.html) ·
+[원문 PDF](docs/sample/sample-paper.pdf) · [한글본](docs/sample/sample-paper.ko.pdf) ·
+[병기본](docs/sample/sample-paper.ko.dual.pdf)). 2쪽, Claude Sonnet, 약 40초.</sub>
+
+> **각자 자기 컴퓨터에서, 자기 계정으로 쓰는 도구다.** 기본 백엔드는 로컬에 로그인된
+> Claude Code(`claude -p`), 또는 Codex(`codex exec`)라서 번역에 쓰는 사용량은 실행한 사람의
+> 구독에서 나간다. 이 백엔드로 서버를 띄워 다른 사람에게 번역을 제공하면 안 된다. 그런 용도라면
 > `KOPAPER_BACKEND=anthropic-api`(API 키, 종량제)를 쓴다. 웹 UI도 항상 127.0.0.1에만 열린다.
+
+## 사용 예시
+
+**그림·표·수식은 그 자리에 그대로 둔다.** 그림 안의 범례와 항목 이름, 표의 머리글과 셀까지 번역하고,
+수식과 숫자는 건드리지 않는다. 세로로 회전된 축 이름처럼 일부 글자는 원문으로 남을 수 있다.
+
+![그림과 표 확대 비교](docs/img/example-closeup.png)
+
+**웹 UI** — PDF를 끌어다 놓고 원문 언어·모델·출력 형식을 고르면 된다. 완료된 작업에서 한글본을
+바로 열거나, 용어집을 고쳐 바뀐 문단만 다시 번역할 수 있다.
+
+![ko-paper 웹 UI](docs/img/example-web.png)
 
 ## 스킬로 설치 (권장)
 
-준비물: [Claude Code](https://claude.com/claude-code) 로그인, [uv](https://docs.astral.sh/uv/), git.
-BabelDOC과 Python 의존성은 처음 실행할 때 자동으로 설치된다. Codex에서 쓰더라도 번역 호출은
-Claude Code(`claude -p`)로 가므로 Claude Code 로그인이 필요하다.
+준비물: [Claude Code](https://claude.com/claude-code) 또는 [Codex](https://github.com/openai/codex) 로그인,
+[uv](https://docs.astral.sh/uv/), git. BabelDOC과 Python 의존성은 처음 실행할 때 자동으로 설치된다.
+번역 백엔드는 `claude`가 있으면 Claude Code, 없고 `codex`만 있으면 Codex로 자동으로 고른다.
 
 **에이전트에게 맡기기** — Claude Code나 Codex에 이렇게 말하면 된다.
 
@@ -116,13 +134,27 @@ BabelDOC 위에 다음 보정을 더한다. 모두 `src/kopaper/babeldoc_launche
 - **수식 폰트**: Cambria Math를 수식으로 취급해 깨진 변수 기호를 원래 모양으로 둔다.
 - **참고문헌**: 영문 원본에서 참고문헌 영역을 찾아 Claude에 보내지 않고, 결과 PDF에서는 원본으로 되돌린다.
 - **표 셀**: 여러 줄짜리 셀을 한 문단으로 합쳐 번역하고, 셀 안에서만 줄바꿈해 아래 행과 겹치지 않게 한다.
+- **알려진 한계**: 작은 대문자(small caps) 제목은 글자 일부가 원문으로 남거나 깨질 수 있다.
+  간격이 좁은 저자 줄과 소속 줄은 한 문단으로 합쳐질 수 있다. 둘 다 BabelDOC의 문단 인식 단계에서 생긴다.
 - **스캔본**: 텍스트 레이어가 없는 PDF는 번역 전에 멈추고 알려 준다. `--ocr`(웹은 고급 설정)로 Tesseract OCR 후 번역할 수 있지만 품질이 낮은 실험 기능이다.
+
+## 백엔드
+
+| 백엔드 | 쓰는 계정 | 비고 |
+|---|---|---|
+| `claude-code` (기본) | Claude Code 로그인 (Claude 구독) | 호출당 오버헤드 약 0.9k 토큰 |
+| `codex` | Codex 로그인 (ChatGPT 요금제) | 호출당 오버헤드 약 9k 토큰. 샘플 2쪽 기준 Claude보다 약 2배 느리다 |
+| `anthropic-api` | `ANTHROPIC_API_KEY` (종량제) | `uv sync --extra api`. 남에게 서비스할 때는 이것만 쓴다 |
+
+모델 선택(sonnet/opus/haiku)은 `codex` 백엔드에서 추론 강도로 바뀐다(haiku·sonnet → low, opus → medium).
 
 ## 환경 변수
 
 | 변수 | 기본값 | 설명 |
 |---|---|---|
-| `KOPAPER_BACKEND` | `claude-code` | `claude-code` 또는 `anthropic-api` |
+| `KOPAPER_BACKEND` | `claude-code` | `claude-code`, `codex`, `anthropic-api` (스킬은 설치된 CLI로 자동 선택) |
+| `KOPAPER_CODEX_MODEL` | Codex 기본 모델 | `codex` 백엔드의 모델 |
+| `KOPAPER_CODEX_EFFORT` | `low` (opus 선택 시 `medium`) | `codex` 백엔드의 추론 강도 |
 | `KOPAPER_PORT` | `8787` | 프록시 포트 |
 | `KOPAPER_MAX_CONCURRENCY` | `4` | 동시 Claude 호출 수 |
 | `KOPAPER_EFFORT` | `medium` | API 백엔드의 effort |

@@ -6,7 +6,7 @@ description: Translate an academic paper PDF (English by default; also German, F
 # ko-paper — 레이아웃을 유지하는 논문 → 한국어 번역
 
 논문 PDF(기본 영어, 다른 언어는 `-l`로 지정)를 그림·표·수식 위치를 그대로 둔 한글 PDF로 바꾼다. 레이아웃은 BabelDOC이,
-번역은 사용자의 Claude Code 로그인(`claude -p`)이 맡는다. 번역은 전부 사용자의 컴퓨터에서
+번역은 사용자의 Claude Code 로그인(`claude -p`) 또는 Codex 로그인(`codex exec`)이 맡는다. 번역은 전부 사용자의 컴퓨터에서
 돌고, 사용자 본인의 Claude 사용량을 쓴다.
 
 모든 명령은 이 스킬 폴더의 래퍼로 실행한다. 래퍼가 저장소 위치를 찾고, 처음 실행할 때
@@ -55,12 +55,15 @@ K="<이 스킬의 base directory>/scripts/kopaper.sh"
 같은 논문을 다시 번역하면 저장된 용어집과 번역 캐시를 재사용해 빠르고 싸다. 용어를
 새로 뽑게 하려면 `--reextract-glossary`.
 
-## Codex에서 실행할 때
+## 번역 백엔드와 Codex
 
-- 번역 호출은 Codex가 아니라 `claude -p`(Claude Code)로 간다. `claude`가 없거나 로그인돼 있지
-  않으면 `doctor`가 알려 준다. 그 메시지를 전하고, Anthropic API 키가 있으면
-  `KOPAPER_BACKEND=anthropic-api`로도 돌릴 수 있다고 안내한다.
-- 첫 설치(`uv sync`, BabelDOC 설치)와 번역(Claude 호출)은 네트워크가 필요하다. 샌드박스에서
+- 래퍼가 백엔드를 고른다: `claude`가 있으면 Claude Code, 없고 `codex`만 있으면 Codex.
+  사용자가 원하면 `KOPAPER_BACKEND=codex` 또는 `claude-code`를 앞에 붙여 바꾼다.
+- 둘 다 없으면 `doctor`가 알려 준다. 그 메시지를 전하고 둘 중 하나를 설치·로그인하도록 안내한다.
+  Anthropic API 키가 있으면 `KOPAPER_BACKEND=anthropic-api`도 된다.
+- Codex 백엔드는 호출마다 입력 토큰이 더 붙어 느리다(샘플 기준 약 2배). 사용자가 묻거나
+  긴 논문이면 미리 알린다.
+- 첫 설치(`uv sync`, BabelDOC 설치)와 번역 호출은 네트워크가 필요하다. Codex 샌드박스에서
   막히면 권한 상승을 요청해 같은 명령을 다시 실행한다.
 
 ## 업데이트
@@ -94,7 +97,7 @@ K="<이 스킬의 base directory>/scripts/kopaper.sh"
 | 변수 | 기본값 | 설명 |
 |---|---|---|
 | `KOPAPER_DATA` | `~/.ko-paper/data` | 캐시·용어집·작업 로그 (래퍼 기준) |
-| `KOPAPER_BACKEND` | `claude-code` | `anthropic-api`면 `ANTHROPIC_API_KEY` 필요, `uv sync --extra api` |
+| `KOPAPER_BACKEND` | 설치된 CLI로 자동 | `claude-code`, `codex`, `anthropic-api`(`ANTHROPIC_API_KEY`, `uv sync --extra api`) |
 | `KOPAPER_PORT` | `8787` | 로컬 프록시 포트 |
 | `KOPAPER_MAX_CONCURRENCY` | `4` | 동시 Claude 호출 수 |
 | `KOPAPER_HOME` | 스킬 폴더 기준 저장소 | 저장소를 다른 곳에 두었을 때 |

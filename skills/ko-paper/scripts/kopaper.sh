@@ -20,13 +20,28 @@ export KOPAPER_DATA="${KOPAPER_DATA:-$HOME/.ko-paper/data}"
 
 need() { command -v "$1" >/dev/null 2>&1; }
 
+# Backend: Claude Code if it is installed, otherwise Codex. KOPAPER_BACKEND overrides.
+if [ -z "${KOPAPER_BACKEND:-}" ]; then
+  if need claude; then export KOPAPER_BACKEND=claude-code
+  elif need codex; then export KOPAPER_BACKEND=codex
+  fi
+fi
+
 setup() {
   local ok=1
   if ! need uv; then
     echo "✗ uv is missing: curl -LsSf https://astral.sh/uv/install.sh | sh" >&2; ok=0
   fi
-  if ! need claude && [ "${KOPAPER_BACKEND:-claude-code}" = "claude-code" ]; then
-    echo "✗ Claude Code CLI (claude) is missing and KOPAPER_BACKEND is claude-code" >&2; ok=0
+  case "${KOPAPER_BACKEND:-}" in
+    claude-code|codex|anthropic-api) ;;
+    "") echo "✗ neither Claude Code (claude) nor Codex (codex) is installed; install and log in to one" >&2; ok=0 ;;
+    *) echo "✗ unknown KOPAPER_BACKEND=$KOPAPER_BACKEND (claude-code, codex, anthropic-api)" >&2; ok=0 ;;
+  esac
+  if [ "${KOPAPER_BACKEND:-}" = "claude-code" ] && ! need claude; then
+    echo "✗ KOPAPER_BACKEND=claude-code but the claude CLI is missing" >&2; ok=0
+  fi
+  if [ "${KOPAPER_BACKEND:-}" = "codex" ] && ! need codex; then
+    echo "✗ KOPAPER_BACKEND=codex but the codex CLI is missing" >&2; ok=0
   fi
   [ "$ok" = 1 ] || exit 1
   if ! need babeldoc && [ -z "${KOPAPER_BABELDOC_BIN:-}" ]; then
@@ -53,7 +68,7 @@ if [ "${1:-}" = "doctor" ]; then
   setup
   echo "✓ kopaper ready  root=$ROOT  data=$KOPAPER_DATA"
   echo "  babeldoc: $(command -v babeldoc || echo "${KOPAPER_BABELDOC_BIN:-?}")"
-  echo "  backend:  ${KOPAPER_BACKEND:-claude-code}"
+  echo "  backend:  $KOPAPER_BACKEND"
   exit 0
 fi
 

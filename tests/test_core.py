@@ -116,15 +116,13 @@ def test_review_pass_and_shape_guard(client, monkeypatch):
 
 
 def test_source_language_prompts():
-    import subprocess
+    import hashlib
 
     from kopaper.pipeline import Options, babeldoc_cmd, proxy_model, system_prompt
     from kopaper.postprocess import _HEADING
 
-    # English stays byte-identical so existing translation caches keep hitting.
-    orig = subprocess.run(["git", "show", "HEAD:prompts/translate_ko.txt"], capture_output=True, text=True).stdout
-    if orig:
-        assert system_prompt("en") == orig
+    # English stays byte-identical to the original prompt so existing translation caches keep hitting.
+    assert hashlib.sha256(system_prompt("en").encode()).hexdigest() == "1a43cbad06dc4098c63e0098c3f943a5e1e22bb09cf842301e396da4d955f902"
     assert "German academic papers" in system_prompt("de") and "German caption labels" in system_prompt("de")
     assert server.BASE_SYSTEM.format(source="English").startswith("You are a professional translator of academic papers from English")
 
@@ -138,3 +136,23 @@ def test_source_language_prompts():
     for h in ("References", "Literaturverzeichnis", "LITERATUR", "Références", "参考文献", "5 Bibliografía"):
         assert _HEADING.match(h), h
     assert not _HEADING.match("references to prior work")
+
+
+def test_codex_backend_parses_events(tmp_path, monkeypatch):
+    from kopaper.proxy import backends
+
+    fake = tmp_path / "codex"
+    fake.write_text(
+        "#!/bin/sh\ncat > /dev/null\n"
+        "echo '{\"type\":\"thread.started\"}'\n"
+        "echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"번역문\"}}'\n"
+        "echo '{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":120,\"output_tokens\":7}}'\n"
+    )
+    fake.chmod(0o755)
+    monkeypatch.setenv("KOPAPER_CODEX_BIN", str(fake))
+    c = asyncio.run(backends.CodexBackend().complete("SYS", "hello", "sonnet"))
+    assert (c.text, c.input_tokens, c.output_tokens) == ("번역문", 120, 7)
+
+    with pytest.raises(BackendError) as e:
+        backends.parse_codex_events('{"type":"turn.failed","error":{"message":"usage limit reached"}}')
+    assert e.value.status == 429

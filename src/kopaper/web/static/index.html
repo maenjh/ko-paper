@@ -91,7 +91,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 <body>
 <main>
   <header>
-    <h1>ko-paper<small>영문 논문 PDF를 그림과 레이아웃 그대로 한글로 옮깁니다</small></h1>
+    <h1>ko-paper<small>논문 PDF를 그림과 레이아웃 그대로 한글로 옮깁니다</small></h1>
     <div class="hdr-right">
       <span class="badge" id="backend">연결 중</span>
       <span class="usage" id="usage" title="이 컴퓨터에서 ko-paper가 보낸 Claude 호출만 집계합니다. 구독의 남은 한도는 Claude가 공개하지 않습니다."></span>
@@ -186,7 +186,7 @@ seg($("#output"), "output");
 async function loadOptions(){
   try{
     const o = await (await fetch("/api/options")).json();
-    $("#backend").textContent = o.backend === "claude-code" ? "Claude 구독 · 개인용" : "Claude API";
+    $("#backend").textContent = {"claude-code": "Claude 구독 · 개인용", "codex": "Codex · 개인용"}[o.backend] || "Claude API";
     $("#model").innerHTML = o.models.map(m => `<button type="button" data-v="${m}" class="${m===state.model?"on":""}">${m}</button>`).join("");
     seg($("#model"), "model");
     $("#lang").innerHTML = Object.entries(o.langs).map(([k, v]) => `<option value="${k}" ${k===o.default_lang?"selected":""}>${esc(v)}</option>`).join("");

@@ -41,8 +41,9 @@ def cmd_translate(a: argparse.Namespace) -> int:
     from .pipeline import Options, translate_pdf
 
     backend = ensure_proxy()
-    if backend == "claude-code":
-        print("backend: your Claude Code login (claude -p). Local use only, do not expose as a service.", file=sys.stderr)
+    if backend in ("claude-code", "codex"):
+        who = "Claude Code login (claude -p)" if backend == "claude-code" else "Codex login (codex exec)"
+        print(f"backend: your {who}. Local use only, do not expose as a service.", file=sys.stderr)
     opts = Options(
         model=a.model, lang_in=a.lang, domain=None if a.domain == "none" else a.domain,
         user_glossaries=[Path(p) for p in a.glossary], pages=a.pages,
