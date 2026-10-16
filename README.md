@@ -300,6 +300,8 @@ BabelDOC 위에 다음 보정을 더한다. 모두 `src/kopaper/babeldoc_launche
 
 ## 라이선스
 
+Copyright (C) 2026 maenjh
+
 [AGPL-3.0-or-later](LICENSE). ko-paper는 AGPL-3.0인 BabelDOC의 내부 모듈을 불러와 패치해 쓰므로
 같은 라이선스를 따른다. 수정한 버전을 배포하거나 네트워크 서비스로 제공하면 소스도 공개해야 한다.
 
