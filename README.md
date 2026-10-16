@@ -154,12 +154,33 @@ ko-paper가 줄이려고 하는 것:
 - Python 3.12로 고정한다. 가장 널리 쓰이는 빌드라 SAC의 평판 판정을 받을 가능성이 가장 높다.
 - 설치마다 새로 생기는 `kopaper.exe` 대신 `python -m kopaper`로 실행한다.
 
-그래도 막히면 보안 기능인 **SAC를 끄지 말고** 간이 모드를 쓴다.
+그래도 막히면 보안 기능인 **SAC를 끄지 말고** 아래 둘 중 하나를 쓴다. 차단 대상인 PyMuPDF는 서명이 없는
+파일이라, SAC가 켜진 PC에서는 Windows에서 직접 레이아웃 유지 번역을 할 수 없다. 이 차단은 웹 UI와는
+상관없다(`ko-paper doctor`만 실행해도 같은 차단이 나온다). 파일 속성의 "차단 해제"(`Unblock-File`)는 다운로드 표시를 지울 뿐이라, 서명을 보는 SAC 차단에는 효과가 없을 가능성이 높다.
 
 **간이 모드 (설치 없음)** — Claude Code나 Codex에서 스킬로 번역을 요청하면, doctor가 차단을 감지했을 때
 에이전트가 BabelDOC 없이 직접 번역한다. 원문 구조(제목·문단·표·캡션·수식)를 살린 한글 PDF
 (`<이름>.ko.lite.pdf`)를 Edge로 만든다. 원문 레이아웃(2단, 페이지 위치)과 그림 이미지는 유지하지 않는다.
 "간단히 번역해줘", "설치 없이 번역해줘"라고 하면 다른 OS에서도 간이 모드로 번역한다.
+
+**WSL (레이아웃 유지, 권장)** — 원문 레이아웃까지 필요하면 WSL(Windows에 들어 있는 Linux) 안에서 쓴다.
+WSL 안의 Linux 프로그램에는 SAC가 적용되지 않는다. 처음 한 번만 관리자 권한과 재부팅이 필요하다.
+
+```powershell
+wsl --install          # 관리자 PowerShell에서 실행, 끝나면 재부팅
+```
+
+재부팅 후 시작 메뉴의 **Ubuntu**를 열고 macOS·Linux용 설치 명령을 실행한다. 로그인도 Ubuntu 안에서 한 번 한다.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-codex   # Claude 구독이면 --with-claude-code
+codex login            # Claude면 claude auth login
+ko-paper               # 브라우저가 자동으로 안 열리면 Windows 브라우저에서 http://127.0.0.1:8787 을 연다
+ko-paper translate /mnt/c/Users/<이름>/Downloads/paper.pdf   # Windows의 C: 드라이브는 /mnt/c
+```
+
+결과 PDF는 원본 옆(Windows 폴더)에 생긴다. WSL에 설치한 ko-paper는 Ubuntu 터미널에서 쓰며,
+Windows 쪽 Claude·Codex 앱의 스킬과는 따로 동작한다.
 
 ## 직접 설치 (CLI·웹 UI)
 

@@ -6,7 +6,8 @@ BabelDOC을 쓸 수 없을 때 쓴다. 대표적인 경우는 Windows Smart App 
 
 결과물은 **원문 구조(제목·문단·표·캡션·수식)를 살린 한글 PDF**다. 원문 레이아웃(2단, 페이지 위치)과 그림
 이미지는 유지하지 않는다. 시작할 때 사용자에게 이 차이를 한 줄로 알린다. 레이아웃 유지본이 필요하면
-BabelDOC이 동작하는 환경에서 일반 모드로 번역하면 된다는 것도 함께 알린다.
+BabelDOC이 동작하는 환경에서 일반 모드로 번역하면 된다는 것도 함께 알린다. Windows에서
+Smart App Control 때문에 간이 모드로 왔다면 그 환경은 WSL이다(README의 "Windows Smart App Control" 참고).
 
 `S` = 이 스킬 폴더의 `scripts` 경로.
 
