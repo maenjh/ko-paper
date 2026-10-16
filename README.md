@@ -33,20 +33,20 @@ Claude Code나 Codex에 스킬로 설치하면 "이 논문 번역해줘" 한마�
 [uv](https://docs.astral.sh/uv/), git. BabelDOC과 Python 의존성은 처음 실행할 때 자동으로 설치된다.
 번역 백엔드는 `claude`가 있으면 Claude Code, 없고 `codex`만 있으면 Codex로 자동으로 고른다.
 
-**에이전트에게 맡기기** — Claude Code나 Codex에 이렇게 말하면 된다.
+**에이전트에게 맡기기** — 아래 글을 Claude Code나 Codex에 그대로 붙여 넣으면 묻지 않고 끝까지 설치한다.
 
 ```text
-https://github.com/maenjh/ko-paper 스킬 설치해줘
+ko-paper(https://github.com/maenjh/ko-paper)를 이 컴퓨터에 설치해 줘. 나에게 질문하지 말고 끝까지 진행해.
+1. 운영체제를 직접 확인해(uname 또는 $env:OS). 사용자에게 묻지 않는다.
+2. macOS·Linux·WSL이면 실행:
+   curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash
+   Windows PowerShell이면 실행:
+   irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex
+3. 네트워크나 샌드박스 때문에 막히면 권한 상승을 요청해 같은 명령을 다시 실행해.
+4. 출력 끝에 "kopaper ready"가 나오면 성공. 실패 줄(✗ 또는 [x])이 있으면 그 안내대로 직접 고치고
+   ko-paper doctor 로 다시 확인해. 로그인처럼 내가 브라우저에서 해야 하는 일만 마지막에 한 줄로 알려 줘.
+5. 끝나면 설치된 위치와 "에이전트를 다시 시작하면 '이 논문 번역해줘'로 쓸 수 있다"만 짧게 알려 줘.
 ```
-
-> **설치를 맡은 AI 에이전트에게:** 아래 명령 하나를 실행한다. 이 기기에 있는 Claude Code
-> (`~/.claude/skills`)와 Codex(`~/.codex/skills`) 모두에 스킬을 설치하고 필요한 도구를 점검한다.
-> 결과 끝의 `✓ kopaper ready` 줄을 확인하고, 실패 줄(`✗`)이 있으면 그 내용을 사용자에게 전한다.
-> 설치 후에는 에이전트를 다시 시작해야 스킬이 보인다.
->
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash
-> ```
 
 **플러그인으로** (Claude Code)
 
@@ -80,7 +80,7 @@ git이 필요하다(`winget install --id Git.Git -e`). Windows의 Claude Code는
 
 터미널 도구 없이 ChatGPT나 Claude **채팅 앱**만 쓰는 사람도 설치할 수 있다. 채팅 앱은 내 컴퓨터에서
 명령을 직접 실행하지 못하므로, 앱이 터미널에 붙여 넣을 명령을 하나씩 알려 주고 결과를 보고
-다음 단계를 안내하는 방식이다. 번역은 내 Claude 또는 ChatGPT 구독으로 돌아간다(Claude 구독은
+다음 단계를 안내하는 방식이다. 문구에 "묻지 말라"를 넣어 두어, 앱이 첫 답변에서 바로 설치 명령을 준다. 번역은 내 Claude 또는 ChatGPT 구독으로 돌아간다(Claude 구독은
 Claude Code로, ChatGPT 구독은 Codex CLI로 로그인해서 쓴다).
 
 아래 글을 그대로 복사해 ChatGPT나 Claude 앱에 붙여 넣는다.
@@ -88,28 +88,27 @@ Claude Code로, ChatGPT 구독은 Codex CLI로 로그인해서 쓴다).
 ```text
 내 컴퓨터에 ko-paper(https://github.com/maenjh/ko-paper)를 설치하려고 해.
 영어 등 외국어 논문 PDF를 레이아웃 그대로 한글 PDF로 번역해 주는 무료 오픈소스 도구야.
-너는 명령을 직접 실행할 수 없으니, 내가 터미널에 붙여 넣을 명령을 한 번에 하나씩 알려 주고
-내가 결과를 붙여 넣으면 보고 다음 단계를 안내해 줘. 아래 순서를 따라 줘.
+너는 명령을 직접 실행할 수 없으니 내가 붙여 넣을 명령을 알려 줘. 나에게 질문하지 말고 아래대로
+첫 답변에서 바로 설치 명령을 줘.
 
-1. 내 운영체제를 물어봐. macOS·Linux는 "터미널", Windows는 "PowerShell"을 쓰고, 여는 방법도 알려 줘
-   (macOS: Spotlight에서 "터미널", Windows: 시작 메뉴에서 "PowerShell"). Windows에 git이 없으면
-   먼저 winget install --id Git.Git -e 로 설치하고 PowerShell을 새로 열게 해 줘.
-2. 내가 Claude 구독(Pro/Max)과 ChatGPT 구독(Plus/Pro) 중 무엇을 쓰는지 물어봐.
-3. 운영체제와 구독에 맞는 설치 명령 하나를 알려 줘.
-   - macOS·Linux, Claude 구독:
+1. 구독은 묻지 마. 네가 ChatGPT면 내 구독은 ChatGPT(Codex 사용), 네가 Claude면 Claude 구독
+   (Claude Code 사용)으로 정해.
+2. 운영체제도 묻지 마. 아래에서 네 구독에 맞는 두 줄(macOS·Linux용, Windows용)을 함께 보여 주고
+   "Mac은 터미널(Spotlight에서 '터미널'), Windows는 시작 메뉴의 PowerShell에 붙여 넣으라"고 알려 줘.
+   - Claude 구독, macOS·Linux:
      curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-claude-code
-   - macOS·Linux, ChatGPT 구독:
-     curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-codex
-   - Windows, Claude 구독:
+   - Claude 구독, Windows:
      $env:KOPAPER_WITH="claude-code"; irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex
-   - Windows, ChatGPT 구독 (Node.js가 없으면 먼저 winget install --id OpenJS.NodeJS.LTS -e):
+   - ChatGPT 구독, macOS·Linux:
+     curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-codex
+   - ChatGPT 구독, Windows (Node.js 필요: winget install --id OpenJS.NodeJS.LTS -e):
      $env:KOPAPER_WITH="codex"; irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex
-4. 출력에 "not logged in"이 있으면 로그인 명령을 알려 줘.
-   Claude는 claude auth login, ChatGPT는 codex login. 브라우저가 열리면 내 계정으로 로그인하면 돼.
-   로그인 후 터미널을 새로 열고 ko-paper doctor 로 다시 점검하게 해 줘.
-5. "kopaper ready"가 나오면 끝. 새 터미널에서 ko-paper 를 실행하면 브라우저에 번역 화면이 열리고,
-   거기에 PDF를 끌어다 놓으면 된다고 알려 줘. 터미널 창은 쓰는 동안 닫지 말라고 말해 줘.
-6. 다른 오류가 나오면 출력 내용을 보고 원인과 해결 명령을 알려 줘. 내 비밀번호나 API 키는 묻지 마.
+   Windows에서 git이 없다는 오류가 나면 winget install --id Git.Git -e 후 PowerShell을 새로 열고 다시 실행.
+3. 같은 답변에서 다음 단계도 미리 알려 줘: 출력에 "not logged in"이 있으면 로그인
+   (Claude: claude auth login, ChatGPT: codex login, 브라우저에서 내 계정으로 로그인) 후
+   창을 새로 열고 ko-paper doctor. "kopaper ready"가 나오면 ko-paper 를 실행하면 브라우저에
+   번역 화면이 열리고, 거기에 PDF를 끌어다 놓으면 된다.
+4. 내가 오류 출력을 붙여 넣으면 원인과 해결 명령만 짧게 알려 줘. 비밀번호나 API 키는 묻지 마.
 ```
 
 설치가 끝나면 앱 없이도 쓸 수 있다.
