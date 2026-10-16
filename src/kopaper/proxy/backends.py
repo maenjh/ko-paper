@@ -5,6 +5,7 @@ import asyncio
 import json
 import os
 import re
+import shutil
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -40,7 +41,8 @@ class ClaudeCodeBackend:
     name = "claude-code"
 
     def __init__(self) -> None:
-        self.bin = os.environ.get("KOPAPER_CLAUDE_BIN", "claude")
+        name = os.environ.get("KOPAPER_CLAUDE_BIN", "claude")
+        self.bin = shutil.which(name) or name  # full path: on Windows this also finds claude.cmd
         self.timeout = int(os.environ.get("KOPAPER_CALL_TIMEOUT", "300"))
 
     async def complete(self, system: str, prompt: str, model: str) -> Completion:
@@ -127,7 +129,8 @@ class CodexBackend:
     EFFORT = {"haiku": "low", "sonnet": "low", "opus": "medium"}
 
     def __init__(self) -> None:
-        self.bin = os.environ.get("KOPAPER_CODEX_BIN", "codex")
+        name = os.environ.get("KOPAPER_CODEX_BIN", "codex")
+        self.bin = shutil.which(name) or name  # full path: on Windows this also finds npm's codex.cmd
         self.model = os.environ.get("KOPAPER_CODEX_MODEL")  # unset → Codex's default model
         self.effort = os.environ.get("KOPAPER_CODEX_EFFORT")
         self.timeout = int(os.environ.get("KOPAPER_CALL_TIMEOUT", "300"))

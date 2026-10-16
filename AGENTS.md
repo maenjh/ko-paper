@@ -8,6 +8,9 @@
 curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash
 ```
 
+Windows(PowerShell): `irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex`
+(옵션은 환경 변수: `$env:KOPAPER_WITH="claude-code"|"codex"`, `$env:KOPAPER_AGENTS="claude"|"codex"|"all"`).
+
 - `~/.ko-paper/src`에 저장소를 받고, 이 기기에 있는 Claude Code(`~/.claude/skills`)와
   Codex(`$CODEX_HOME/skills`, 기본 `~/.codex/skills`)에 `ko-paper` 스킬을 복사한다.
   한쪽만 원하면 `bash -s -- --claude` 또는 `--codex`.

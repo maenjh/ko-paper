@@ -62,6 +62,18 @@ curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | b
 # 한쪽에만:  ... | bash -s -- --claude   또는   ... | bash -s -- --codex
 ```
 
+**Windows** (PowerShell, WSL 없이)
+
+```powershell
+irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex
+# Claude Code도 설치:  $env:KOPAPER_WITH="claude-code"; irm .../install.ps1 | iex
+# Codex도 설치:        $env:KOPAPER_WITH="codex"; irm .../install.ps1 | iex   (Node.js 필요)
+# 한쪽에만:            $env:KOPAPER_AGENTS="claude"  또는  "codex"
+```
+
+git이 필요하다(`winget install --id Git.Git -e`). Windows의 Claude Code는 Git Bash로 명령을 실행하므로
+스킬은 `kopaper.sh`를, Codex·PowerShell에서는 `kopaper.ps1`을 쓴다.
+
 `ko-paper update`(또는 설치 명령을 다시 실행)로 최신 버전을 받는다. 처음 설치한 에이전트에만 다시 설치한다.
 
 ## ChatGPT·Claude 앱만 쓴다면
@@ -79,18 +91,23 @@ Claude Code로, ChatGPT 구독은 Codex CLI로 로그인해서 쓴다).
 너는 명령을 직접 실행할 수 없으니, 내가 터미널에 붙여 넣을 명령을 한 번에 하나씩 알려 주고
 내가 결과를 붙여 넣으면 보고 다음 단계를 안내해 줘. 아래 순서를 따라 줘.
 
-1. 내 운영체제를 물어봐. macOS나 Linux면 계속하고, Windows면 먼저 WSL(Ubuntu)을 설치하도록
-   안내한 뒤 WSL 터미널에서 진행해. 터미널 여는 방법도 알려 줘(macOS: Spotlight에서 "터미널").
+1. 내 운영체제를 물어봐. macOS·Linux는 "터미널", Windows는 "PowerShell"을 쓰고, 여는 방법도 알려 줘
+   (macOS: Spotlight에서 "터미널", Windows: 시작 메뉴에서 "PowerShell"). Windows에 git이 없으면
+   먼저 winget install --id Git.Git -e 로 설치하고 PowerShell을 새로 열게 해 줘.
 2. 내가 Claude 구독(Pro/Max)과 ChatGPT 구독(Plus/Pro) 중 무엇을 쓰는지 물어봐.
-3. 구독에 맞는 설치 명령 하나를 알려 줘.
-   - Claude 구독:
+3. 운영체제와 구독에 맞는 설치 명령 하나를 알려 줘.
+   - macOS·Linux, Claude 구독:
      curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-claude-code
-   - ChatGPT 구독:
+   - macOS·Linux, ChatGPT 구독:
      curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-codex
-4. 출력에 "✗ ... not logged in"이 있으면 로그인 명령을 알려 줘.
+   - Windows, Claude 구독:
+     $env:KOPAPER_WITH="claude-code"; irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex
+   - Windows, ChatGPT 구독 (Node.js가 없으면 먼저 winget install --id OpenJS.NodeJS.LTS -e):
+     $env:KOPAPER_WITH="codex"; irm https://raw.githubusercontent.com/maenjh/ko-paper/main/install.ps1 | iex
+4. 출력에 "not logged in"이 있으면 로그인 명령을 알려 줘.
    Claude는 claude auth login, ChatGPT는 codex login. 브라우저가 열리면 내 계정으로 로그인하면 돼.
    로그인 후 터미널을 새로 열고 ko-paper doctor 로 다시 점검하게 해 줘.
-5. "✓ kopaper ready"가 나오면 끝. 새 터미널에서 ko-paper 를 실행하면 브라우저에 번역 화면이 열리고,
+5. "kopaper ready"가 나오면 끝. 새 터미널에서 ko-paper 를 실행하면 브라우저에 번역 화면이 열리고,
    거기에 PDF를 끌어다 놓으면 된다고 알려 줘. 터미널 창은 쓰는 동안 닫지 말라고 말해 줘.
 6. 다른 오류가 나오면 출력 내용을 보고 원인과 해결 명령을 알려 줘. 내 비밀번호나 API 키는 묻지 마.
 ```
