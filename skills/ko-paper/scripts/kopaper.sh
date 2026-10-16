@@ -99,6 +99,7 @@ native_fail() {  # $1 = which environment, $2 = python's output
     echo "  Windows Smart App Control blocked an unsigned file. Don't turn it off:" >&2
     echo "  see https://github.com/maenjh/ko-paper#windows-smart-app-control" >&2
   fi
+  echo "  Lite mode still works without these modules (no layout): see lite.md in the skill folder." >&2
   exit 1
 }
 
