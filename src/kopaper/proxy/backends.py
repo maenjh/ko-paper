@@ -119,9 +119,79 @@ class AnthropicAPIBackend:
         return Completion(text, msg.usage.input_tokens, msg.usage.output_tokens)
 
 
+class CodexBackend:
+    """Calls the locally logged-in Codex CLI (`codex exec`) — for people with ChatGPT/Codex but no Claude."""
+
+    name = "codex"
+    # The proxy speaks Claude model names; map them to Codex reasoning effort instead.
+    EFFORT = {"haiku": "low", "sonnet": "low", "opus": "medium"}
+
+    def __init__(self) -> None:
+        self.bin = os.environ.get("KOPAPER_CODEX_BIN", "codex")
+        self.model = os.environ.get("KOPAPER_CODEX_MODEL")  # unset → Codex's default model
+        self.effort = os.environ.get("KOPAPER_CODEX_EFFORT")
+        self.timeout = int(os.environ.get("KOPAPER_CALL_TIMEOUT", "300"))
+        self.workdir = DATA_DIR / "codex"
+        self.workdir.mkdir(parents=True, exist_ok=True)
+
+    def _instructions(self, system: str) -> str:
+        # Replacing Codex's agent instructions with ours halves the per-call overhead (~17k → ~9k tokens).
+        import hashlib
+
+        f = self.workdir / f"instructions-{hashlib.sha256(system.encode()).hexdigest()[:16]}.md"
+        if not f.exists():
+            f.write_text(system, encoding="utf-8")
+        return str(f)
+
+    async def complete(self, system: str, prompt: str, model: str) -> Completion:
+        cmd = [
+            self.bin, "exec", "--json", "--skip-git-repo-check", "--ephemeral",
+            "--ignore-user-config", "--ignore-rules", "--sandbox", "read-only",
+            "-c", f"model_instructions_file={json.dumps(self._instructions(system))}",
+            "-c", f"model_reasoning_effort={json.dumps(self.effort or self.EFFORT.get(model, 'low'))}",
+            "-c", 'web_search="disabled"',
+        ]
+        if self.model:
+            cmd += ["--model", self.model]
+        cmd.append("-")
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE, cwd=str(self.workdir),
+        )
+        try:
+            out, err = await asyncio.wait_for(proc.communicate(prompt.encode()), self.timeout)
+        except asyncio.TimeoutError:
+            proc.kill()
+            raise BackendError(504, "codex exec timed out")
+        return parse_codex_events(out.decode(errors="replace"), err.decode(errors="replace"))
+
+
+def parse_codex_events(stdout: str, stderr: str = "") -> Completion:
+    """Last agent message + usage from `codex exec --json` output."""
+    text, usage, errors = None, {}, []
+    for line in stdout.splitlines():
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        t = ev.get("type")
+        if t == "item.completed" and ev.get("item", {}).get("type") == "agent_message":
+            text = ev["item"].get("text", "")
+        elif t == "turn.completed":
+            usage = ev.get("usage") or {}
+        elif t in ("error", "turn.failed"):
+            errors.append(str(ev.get("message") or (ev.get("error") or {}).get("message") or ev))
+    if text is None:
+        msg = (" | ".join(errors) or stderr.strip() or stdout.strip())[:500]
+        raise BackendError(429 if _LIMIT_RE.search(msg) else 502, f"codex exec failed: {msg}")
+    return Completion(text, int(usage.get("input_tokens", 0)), int(usage.get("output_tokens", 0)))
+
+
 def make_backend(name: str) -> TranslatorBackend:
     if name == "claude-code":
         return ClaudeCodeBackend()
     if name == "anthropic-api":
         return AnthropicAPIBackend()
+    if name == "codex":
+        return CodexBackend()
     raise ValueError(f"unknown backend: {name}")

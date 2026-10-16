@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Calibrated Reliance on Writing Assistants</title>
+<style>
+  @page { size: Letter; margin: 0.75in 0.7in; }
+  body { font-family: "Times New Roman", Times, serif; font-size: 10pt; line-height: 1.32; color: #000; margin: 0; }
+  h1 { font-size: 16pt; text-align: center; margin: 0 0 6pt; line-height: 1.2; }
+  .authors { text-align: center; font-size: 10.5pt; margin-bottom: 10pt; }
+  .affil { text-align: center; font-size: 9pt; font-style: italic; margin-bottom: 12pt; }
+  .abstract { margin: 0 0.35in 12pt; font-size: 9.5pt; text-align: justify; }
+  .abstract b { font-weight: bold; }
+  .cols { column-count: 2; column-gap: 0.28in; text-align: justify; }
+  h2 { font-size: 11pt; margin: 9pt 0 4pt; }
+  p { margin: 0 0 5pt; text-indent: 1em; }
+  p.first { text-indent: 0; }
+  .eq { display: flex; justify-content: space-between; align-items: center; margin: 6pt 0 6pt 1.2em; font-style: italic; }
+  .eq .no { font-style: normal; }
+  figure { margin: 6pt 0 8pt; break-inside: avoid; }
+  figcaption { font-size: 8.5pt; margin-top: 3pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 8.5pt; }
+  th, td { padding: 2pt 4pt; text-align: left; }
+  thead tr { border-top: 1.2pt solid #000; border-bottom: 0.6pt solid #000; }
+  tbody tr:last-child { border-bottom: 1.2pt solid #000; }
+  td.n { text-align: right; }
+  .refs p { text-indent: -1.2em; padding-left: 1.2em; font-size: 8.5pt; margin-bottom: 3pt; }
+</style>
+</head>
+<body>
+<h1>Calibrated Reliance on AI Writing Assistants:<br>Effects of Confidence Cues on Accepting Suggestions</h1>
+<div class="authors">Jordan Lee and Sam Park</div>
+<div class="affil">Sample paper written for the ko-paper README. All data are illustrative.</div>
+
+<div class="abstract"><b>Abstract</b> — People increasingly draft text with AI writing assistants, yet they often accept
+suggestions without checking them. We study whether showing a confidence cue next to each suggestion helps users
+rely on the assistant only when it is likely to be right. In a within-subjects study with 48 participants who edited
+short reports, confidence cues reduced the acceptance of incorrect suggestions by 31% while leaving the acceptance of
+correct ones almost unchanged. Participants also reported trust that tracked the assistant's actual accuracy more
+closely. We discuss how interface cues can support appropriate reliance rather than simply increasing trust.</div>
+
+<div class="cols">
+<h2>1 Introduction</h2>
+<p class="first">Writing assistants built on large language models now suggest whole sentences while people type. These
+suggestions save time, but they also invite overreliance: users accept fluent text even when it contains factual
+errors. Prior work on automation argues that the goal is not maximal trust but <i>calibrated</i> trust, in which a
+person's reliance matches the system's real capability.</p>
+<p>We ask a simple question: does a visible confidence cue change which suggestions people accept? We contribute
+(1) a controlled study of confidence cues in a writing task, (2) a measure of calibration that combines acceptance
+and accuracy, and (3) design guidance for assistants that communicate uncertainty.</p>
+
+<h2>2 Method</h2>
+<p class="first">Each participant edited twelve short reports. For every report the assistant offered four suggestions,
+one of which contained a planted error. In the <i>cue</i> condition, each suggestion carried a high, medium, or low
+confidence label; in the <i>baseline</i> condition, no label was shown. Condition order was counterbalanced.</p>
+<p>We define the calibration score <i>C</i> of a participant as the difference between the acceptance rate of
+correct suggestions and the acceptance rate of incorrect ones:</p>
+<div class="eq"><span>C = P(accept | correct) − P(accept | incorrect)</span><span class="no">(1)</span></div>
+<p class="first">A score of 1 means the participant accepted every correct suggestion and rejected every incorrect one;
+a score of 0 means acceptance did not depend on correctness.</p>
+
+<figure>
+<svg viewBox="0 0 300 150" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Times New Roman, serif" font-size="9">
+  <line x1="34" y1="120" x2="290" y2="120" stroke="#000" stroke-width="0.8"/>
+  <line x1="34" y1="10" x2="34" y2="120" stroke="#000" stroke-width="0.8"/>
+  <g fill="#000" text-anchor="end">
+    <text x="30" y="123">0</text><text x="30" y="96">25</text><text x="30" y="69">50</text>
+    <text x="30" y="42">75</text><text x="30" y="15">100</text>
+  </g>
+  <g stroke="#ccc" stroke-width="0.4">
+    <line x1="34" y1="93" x2="290" y2="93"/><line x1="34" y1="66" x2="290" y2="66"/>
+    <line x1="34" y1="39" x2="290" y2="39"/><line x1="34" y1="12" x2="290" y2="12"/>
+  </g>
+  <rect x="58" y="25.2" width="34" height="94.8" fill="#9aa5b1"/>
+  <rect x="94" y="27.3" width="34" height="92.7" fill="#2f4858"/>
+  <rect x="182" y="64.9" width="34" height="55.1" fill="#9aa5b1"/>
+  <rect x="218" y="82.0" width="34" height="38.0" fill="#2f4858"/>
+  <g text-anchor="middle" fill="#000">
+    <text x="93" y="134">Correct suggestions</text>
+    <text x="217" y="134">Incorrect suggestions</text>
+  </g>
+  <text x="10" y="66" transform="rotate(-90 10 66)" text-anchor="middle">Acceptance (%)</text>
+  <rect x="200" y="14" width="8" height="8" fill="#9aa5b1"/><text x="211" y="21">Baseline</text>
+  <rect x="246" y="14" width="8" height="8" fill="#2f4858"/><text x="257" y="21">Cue</text>
+</svg>
+<figcaption><b>Figure 1:</b> Acceptance rates by suggestion correctness. Confidence cues mainly lowered the
+acceptance of incorrect suggestions.</figcaption>
+</figure>
+
+<h2>3 Results</h2>
+<p class="first">Table 1 summarizes the main measures. With confidence cues, participants accepted far fewer incorrect
+suggestions, while acceptance of correct suggestions dropped only slightly. As a result, the mean calibration score
+rose from 0.37 to 0.51.</p>
+
+<figure>
+<figcaption style="margin:0 0 3pt"><b>Table 1:</b> Mean measures per condition (N = 48).</figcaption>
+<table>
+  <thead><tr><th>Measure</th><th>Baseline</th><th>Cue</th><th>Change</th></tr></thead>
+  <tbody>
+    <tr><td>Accepted, correct (%)</td><td class="n">87.8</td><td class="n">85.9</td><td class="n">−1.9</td></tr>
+    <tr><td>Accepted, incorrect (%)</td><td class="n">51.0</td><td class="n">35.2</td><td class="n">−15.8</td></tr>
+    <tr><td>Calibration score <i>C</i></td><td class="n">0.37</td><td class="n">0.51</td><td class="n">+0.14</td></tr>
+    <tr><td>Task time (min)</td><td class="n">6.4</td><td class="n">6.9</td><td class="n">+0.5</td></tr>
+    <tr><td>Self-reported trust (1–7)</td><td class="n">5.6</td><td class="n">5.1</td><td class="n">−0.5</td></tr>
+  </tbody>
+</table>
+</figure>
+
+<p>Editing took about half a minute longer with cues, which participants attributed to checking low-confidence
+suggestions more carefully. Self-reported trust decreased slightly, but it correlated more strongly with the
+assistant's accuracy on each report.</p>
+
+<h2>4 Discussion</h2>
+<p class="first">Confidence cues did not make people trust the assistant more; they made people trust it more
+selectively. Designers should therefore evaluate assistants by calibration rather than by acceptance alone. A
+limitation is that our cues were perfectly informative; real confidence estimates are noisy, and poorly
+calibrated cues could mislead users.</p>
+
+<div class="refs">
+<h2>References</h2>
+<p>[1] A. Author and B. Author. 2020. Appropriate reliance on automated advice. <i>Journal of Example Studies</i> 12, 3, 45–67.</p>
+<p>[2] C. Author. 2022. Uncertainty displays in interactive systems. In <i>Proceedings of the Example Conference</i>, 101–110.</p>
+<p>[3] D. Author and E. Author. 2024. Measuring overreliance on language model suggestions. arXiv:0000.00000.</p>
+</div>
+</div>
+</body>
+</html>
