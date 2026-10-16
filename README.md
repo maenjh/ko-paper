@@ -1,8 +1,8 @@
 # ko-paper
 
-영문 논문 PDF를 그림·표·수식 위치를 유지한 채 한글 PDF로 번역한다.
+논문 PDF(기본 영어, 독일어·프랑스어·일본어 등 10개 언어)를 그림·표·수식 위치를 유지한 채 한글 PDF로 번역한다.
 레이아웃 처리는 [BabelDOC](https://github.com/funstory-ai/BabelDOC), 번역은 Claude가 맡는다.
-Claude Code 스킬로 설치하면 "이 논문 번역해줘" 한마디로 쓸 수 있다.
+Claude Code나 Codex에 스킬로 설치하면 "이 논문 번역해줘" 한마디로 쓸 수 있다.
 
 > **각자 자기 컴퓨터에서, 자기 Claude 계정으로 쓰는 도구다.** 기본 백엔드는 로컬에 로그인된
 > Claude Code(`claude -p`)라서 번역에 쓰는 사용량은 실행한 사람의 구독에서 나간다.
@@ -12,26 +12,50 @@ Claude Code 스킬로 설치하면 "이 논문 번역해줘" 한마디로 쓸 �
 ## 스킬로 설치 (권장)
 
 준비물: [Claude Code](https://claude.com/claude-code) 로그인, [uv](https://docs.astral.sh/uv/), git.
-BabelDOC과 Python 의존성은 처음 실행할 때 자동으로 설치된다.
+BabelDOC과 Python 의존성은 처음 실행할 때 자동으로 설치된다. Codex에서 쓰더라도 번역 호출은
+Claude Code(`claude -p`)로 가므로 Claude Code 로그인이 필요하다.
 
-**플러그인으로**
+**에이전트에게 맡기기** — Claude Code나 Codex에 이렇게 말하면 된다.
+
+```text
+https://github.com/maenjh/ko-paper 스킬 설치해줘
+```
+
+> **설치를 맡은 AI 에이전트에게:** 아래 명령 하나를 실행한다. 이 기기에 있는 Claude Code
+> (`~/.claude/skills`)와 Codex(`~/.codex/skills`) 모두에 스킬을 설치하고 필요한 도구를 점검한다.
+> 결과 끝의 `✓ kopaper ready` 줄을 확인하고, 실패 줄(`✗`)이 있으면 그 내용을 사용자에게 전한다.
+> 설치 후에는 에이전트를 다시 시작해야 스킬이 보인다.
+>
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash
+> ```
+
+**플러그인으로** (Claude Code)
 
 ```text
 /plugin marketplace add maenjh/ko-paper
 /plugin install ko-paper@ko-paper
 ```
 
-**스크립트로** (`~/.ko-paper/src`에 받고 `~/.claude/skills/ko-paper`로 연결)
+**스크립트로** (`~/.ko-paper/src`에 받고, 찾은 에이전트마다 스킬을 복사)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash
+# 한쪽에만:  ... | bash -s -- --claude   또는   ... | bash -s -- --codex
 ```
+
+다시 실행하거나 스킬 폴더의 `scripts/kopaper.sh update`를 실행하면 최신 버전으로 갱신된다.
+
+**Claude 앱**: 데스크톱 앱의 Code 탭은 Claude Code와 같은 `~/.claude/skills`를 쓰므로 위 방법으로
+설치하면 그대로 보인다. claude.ai 일반 채팅은 원격 샌드박스에서 돌아 내 컴퓨터의 PDF와
+BabelDOC에 접근할 수 없어 지원하지 않는다.
 
 설치 후 Claude Code에서 PDF 경로와 함께 요청하면 된다.
 
 ```text
 ~/Downloads/attention.pdf 이 논문 번역해줘
 1~3쪽만 한글본으로 뽑아줘
+~/Downloads/aufsatz.pdf 독일어 논문인데 한글로 번역해줘
 ```
 
 결과는 입력 파일 옆에 `<이름>.ko.pdf`(한글본)와 `<이름>.ko.dual.pdf`(원문 병기본)로 생긴다.
@@ -50,6 +74,7 @@ curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | b
 ```
 
 - PDF를 끌어다 놓으면 대기열에 들어가고 한 편씩 차례대로 번역한다.
+- 원문 언어(영어, 독일어, 프랑스어 등)를 고를 수 있다. 출력은 항상 한국어다.
 - 단계 이름, 진행률, 경과 시간, 남은 시간 추정이 실시간으로 표시된다.
 - 완료되면 한글본 보기, 한글본·병기본·용어집 받기가 가능하다. 진행 중 취소, 완료 후 삭제, 다시 번역도 된다.
 - **용어집 편집**: 완료된 작업에서 이 논문의 용어집을 열어 고치고 "저장 후 다시 번역"을 누르면, 바뀐 용어가 들어간 문단만 다시 번역된다.
@@ -64,6 +89,7 @@ curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | b
 .venv/bin/kopaper translate a.pdf b.pdf -o out/      # 여러 편, 출력 폴더 지정
 .venv/bin/kopaper translate paper.pdf -p 1-3 --mono-only
 .venv/bin/kopaper translate paper.pdf -m opus        # 모델 변경 (sonnet 기본)
+.venv/bin/kopaper translate aufsatz.pdf -l de        # 독일어 논문 (원문 언어, 기본 en)
 .venv/bin/kopaper translate paper.pdf -g my_terms.csv  # 내 용어집 (최우선)
 .venv/bin/kopaper serve --proxy-only                 # 프록시만 실행 (127.0.0.1:8787)
 ```

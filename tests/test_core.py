@@ -113,3 +113,28 @@ def test_review_pass_and_shape_guard(client, monkeypatch):
     assert r["choices"][0]["message"]["content"] == '[{"id": 0, "output": "다듬은 번역"}]' and fb.calls == 2
     r = c.post("/v1/chat/completions", json=msg("b")).json()
     assert "초안" in r["choices"][0]["message"]["content"]  # review changed ids → draft kept
+
+
+def test_source_language_prompts():
+    import subprocess
+
+    from kopaper.pipeline import Options, babeldoc_cmd, proxy_model, system_prompt
+    from kopaper.postprocess import _HEADING
+
+    # English stays byte-identical so existing translation caches keep hitting.
+    orig = subprocess.run(["git", "show", "HEAD:prompts/translate_ko.txt"], capture_output=True, text=True).stdout
+    if orig:
+        assert system_prompt("en") == orig
+    assert "German academic papers" in system_prompt("de") and "German caption labels" in system_prompt("de")
+    assert server.BASE_SYSTEM.format(source="English").startswith("You are a professional translator of academic papers from English")
+
+    assert proxy_model(Options()) == "sonnet"
+    assert proxy_model(Options(lang_in="de", review=True)) == "sonnet@de+review"
+    assert server.parse_model("sonnet@de+review") == ("sonnet", "German", True)
+    assert server.parse_model("opus") == ("opus", "English", False)
+
+    cmd = babeldoc_cmd(__import__("pathlib").Path("x.pdf"), __import__("pathlib").Path("out"), Options(lang_in="fr"), None, False)
+    assert cmd[cmd.index("--lang-in") + 1] == "fr"
+    for h in ("References", "Literaturverzeichnis", "LITERATUR", "Références", "参考文献", "5 Bibliografía"):
+        assert _HEADING.match(h), h
+    assert not _HEADING.match("references to prior work")

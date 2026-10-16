@@ -20,5 +20,11 @@ PROXY_URL = f"http://{PROXY_HOST}:{PROXY_PORT}/v1"
 BACKEND = os.environ.get("KOPAPER_BACKEND", "claude-code")
 BABELDOC_BIN = os.environ.get("KOPAPER_BABELDOC_BIN", "babeldoc")
 
+# Source languages a paper can be in. The output is always Korean.
+SOURCE_LANGS = {
+    "en": "English", "de": "German", "fr": "French", "es": "Spanish", "it": "Italian",
+    "pt": "Portuguese", "nl": "Dutch", "ru": "Russian", "ja": "Japanese", "zh": "Chinese",
+}
+
 for d in (DATA_DIR, PAPER_GLOSSARY_DIR, JOBS_DIR):
     d.mkdir(parents=True, exist_ok=True)

@@ -107,6 +107,9 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
     <input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
 
     <div class="grid">
+      <label class="f">원문 언어
+        <select id="lang"></select>
+      </label>
       <label class="f">모델
         <div class="seg" id="model"></div>
       </label>
@@ -186,6 +189,7 @@ async function loadOptions(){
     $("#backend").textContent = o.backend === "claude-code" ? "Claude 구독 · 개인용" : "Claude API";
     $("#model").innerHTML = o.models.map(m => `<button type="button" data-v="${m}" class="${m===state.model?"on":""}">${m}</button>`).join("");
     seg($("#model"), "model");
+    $("#lang").innerHTML = Object.entries(o.langs).map(([k, v]) => `<option value="${k}" ${k===o.default_lang?"selected":""}>${esc(v)}</option>`).join("");
     $("#domain").innerHTML = o.domains.map(d => `<option value="${esc(d)}" ${d===o.default_domain?"selected":""}>${esc(d)}</option>`).join("") + `<option value="none">사용 안 함</option>`;
   }catch{ $("#backend").textContent = "서버 연결 실패"; }
 }
@@ -209,6 +213,7 @@ $("#go").addEventListener("click", async () => {
     const fd = new FormData();
     fd.append("file", f);
     fd.append("model", state.model);
+    fd.append("lang", $("#lang").value);
     fd.append("output", state.output);
     fd.append("domain", $("#domain").value);
     fd.append("pages", $("#pages").value);
@@ -230,7 +235,7 @@ function dur(sec){
 }
 function jobHTML(j){
   const now = Date.now()/1000, o = j.options || {}, r = j.result;
-  const meta = [o.model + (o.review ? " + 2차 검토" : ""), o.output==="both"?"한글본+병기본":o.output==="mono"?"한글본":"병기본", o.pages?`${o.pages}쪽`:null, o.domain!=="none"?o.domain:null].filter(Boolean).join(" · ");
+  const meta = [o.lang && o.lang!=="en" ? `원문 ${o.lang}` : null, o.model + (o.review ? " + 2차 검토" : ""), o.output==="both"?"한글본+병기본":o.output==="mono"?"한글본":"병기본", o.pages?`${o.pages}쪽`:null, o.domain!=="none"?o.domain:null].filter(Boolean).join(" · ");
   let body = "";
   if(j.status === "running"){
     const el = j.started ? now - j.started : 0;
@@ -305,7 +310,7 @@ function gRender(){
   const q = $("#gsearch").value.trim().toLowerCase(), box = $("#grows");
   box.replaceChildren();
   const head = document.createElement("div"); head.className = "grow head";
-  head.innerHTML = "<span>영문</span><span>한글</span><span></span>"; box.append(head);
+  head.innerHTML = "<span>원문</span><span>한글</span><span></span>"; box.append(head);
   gRows.forEach((r, i) => {
     if(q && !(r.source.toLowerCase().includes(q) || r.target.toLowerCase().includes(q))) return;
     const row = document.createElement("div"); row.className = "grow";

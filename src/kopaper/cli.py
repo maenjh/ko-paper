@@ -1,4 +1,4 @@
-"""kopaper CLI: translate English paper PDFs into layout-preserving Korean PDFs."""
+"""kopaper CLI: translate paper PDFs (English by default) into layout-preserving Korean PDFs."""
 from __future__ import annotations
 
 import argparse
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import httpx
 
-from .config import BACKEND, PROXY_HOST, PROXY_PORT, PROXY_URL
+from .config import BACKEND, PROXY_HOST, PROXY_PORT, PROXY_URL, SOURCE_LANGS
 
 
 def proxy_alive() -> str | None:
@@ -44,7 +44,7 @@ def cmd_translate(a: argparse.Namespace) -> int:
     if backend == "claude-code":
         print("backend: your Claude Code login (claude -p). Local use only, do not expose as a service.", file=sys.stderr)
     opts = Options(
-        model=a.model, domain=None if a.domain == "none" else a.domain,
+        model=a.model, lang_in=a.lang, domain=None if a.domain == "none" else a.domain,
         user_glossaries=[Path(p) for p in a.glossary], pages=a.pages,
         mono=not a.dual_only, dual=not a.mono_only, qps=a.qps,
         reextract_glossary=a.reextract_glossary, formula_hint=a.formula_hint,
@@ -110,6 +110,8 @@ def main(argv: list[str] | None = None) -> int:
     t = sub.add_parser("translate", help="translate PDF(s) to Korean, keeping layout and figures")
     t.add_argument("files", nargs="+")
     t.add_argument("-o", "--out", help="output directory (default: next to each input)")
+    t.add_argument("-l", "--lang", default="en", choices=list(SOURCE_LANGS),
+                   help="language of the paper (default en); the output is always Korean")
     t.add_argument("-m", "--model", default="sonnet", choices=["sonnet", "opus", "haiku"])
     t.add_argument("-d", "--domain", default="cs_ml", help="domain glossary in glossary/ (or 'none')")
     t.add_argument("-g", "--glossary", action="append", default=[], help="extra glossary CSV (highest priority)")

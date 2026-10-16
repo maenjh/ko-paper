@@ -1,11 +1,11 @@
 ---
 name: ko-paper
-description: Translate an English academic paper PDF into Korean while keeping figures, tables, equations and page layout in place (BabelDOC for layout, Claude for translation). Produces a Korean-only PDF and a side-by-side EN/KO PDF next to the input. Use when the user hands over an English paper or reading PDF and wants it in Korean — "이 논문 번역해줘", "이 논문 해줘", "한글로 바꿔줘", "PDF 번역", "논문 한글본", "영어 논문 한국어로", "리딩 번역", "translate this paper to Korean". Not for summarising a paper, translating plain text in chat, or Korean→English.
+description: Translate an academic paper PDF (English by default; also German, French, Spanish, Italian, Portuguese, Dutch, Russian, Japanese, Chinese) into Korean while keeping figures, tables, equations and page layout in place (BabelDOC for layout, Claude for translation). Produces a Korean-only PDF and a side-by-side original/Korean PDF next to the input. Use when the user hands over a paper or reading PDF and wants it in Korean — "이 논문 번역해줘", "이 논문 해줘", "한글로 바꿔줘", "PDF 번역", "논문 한글본", "영어 논문 한국어로", "독일어 논문 번역", "리딩 번역", "translate this paper to Korean". Not for summarising a paper, translating plain text in chat, or translating out of Korean.
 ---
 
-# ko-paper — 레이아웃을 유지하는 영→한 논문 번역
+# ko-paper — 레이아웃을 유지하는 논문 → 한국어 번역
 
-영문 논문 PDF를 그림·표·수식 위치를 그대로 둔 한글 PDF로 바꾼다. 레이아웃은 BabelDOC이,
+논문 PDF(기본 영어, 다른 언어는 `-l`로 지정)를 그림·표·수식 위치를 그대로 둔 한글 PDF로 바꾼다. 레이아웃은 BabelDOC이,
 번역은 사용자의 Claude Code 로그인(`claude -p`)이 맡는다. 번역은 전부 사용자의 컴퓨터에서
 돌고, 사용자 본인의 Claude 사용량을 쓴다.
 
@@ -19,7 +19,8 @@ K="<이 스킬의 base directory>/scripts/kopaper.sh"
 ## 절차
 
 1. **입력 확인.** 경로가 실제 PDF인지 보고, 페이지 수를 알 수 있으면 예상 시간과 함께 알린다
-   (`pdfinfo`, macOS면 `mdls -name kMDItemNumberOfPages`).
+   (`pdfinfo`, macOS면 `mdls -name kMDItemNumberOfPages`). **원문 언어를 정한다.** 사용자가
+   말했으면 그 언어, 아니면 첫 페이지 텍스트를 보고 판단한다. 영어가 아니면 `-l <코드>`를 붙인다.
 2. **처음이면 점검.** `"$K" doctor`. 실패 메시지(uv 없음, claude 없음)는 그대로 사용자에게
    전하고 설치 방법을 안내한다. 사용자의 셸 설정을 임의로 바꾸지 않는다.
 3. **번역 실행 — 백그라운드로.** 30쪽 논문에 5~10분 걸린다.
@@ -40,6 +41,7 @@ K="<이 스킬의 base directory>/scripts/kopaper.sh"
 
 | 상황 | 옵션 |
 |---|---|
+| 영어가 아닌 논문 | `-l de` (de 독일어, fr 프랑스어, es 스페인어, it 이탈리아어, pt 포르투갈어, nl 네덜란드어, ru 러시아어, ja 일본어, zh 중국어) |
 | 일부 페이지만 | `-p 1-3,5` |
 | 한글본만 / 병기본만 | `--mono-only` / `--dual-only` |
 | 품질 우선 | `-m opus` (기본 `sonnet`) |
@@ -52,6 +54,19 @@ K="<이 스킬의 base directory>/scripts/kopaper.sh"
 
 같은 논문을 다시 번역하면 저장된 용어집과 번역 캐시를 재사용해 빠르고 싸다. 용어를
 새로 뽑게 하려면 `--reextract-glossary`.
+
+## Codex에서 실행할 때
+
+- 번역 호출은 Codex가 아니라 `claude -p`(Claude Code)로 간다. `claude`가 없거나 로그인돼 있지
+  않으면 `doctor`가 알려 준다. 그 메시지를 전하고, Anthropic API 키가 있으면
+  `KOPAPER_BACKEND=anthropic-api`로도 돌릴 수 있다고 안내한다.
+- 첫 설치(`uv sync`, BabelDOC 설치)와 번역(Claude 호출)은 네트워크가 필요하다. 샌드박스에서
+  막히면 권한 상승을 요청해 같은 명령을 다시 실행한다.
+
+## 업데이트
+
+`"$K" update` — install.sh로 설치한 경우 최신 버전을 받아 스킬을 갱신한다. 플러그인으로
+설치했으면 Claude Code의 `/plugin`에서 업데이트한다.
 
 ## 웹 UI
 
