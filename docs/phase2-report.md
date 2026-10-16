@@ -60,5 +60,4 @@ API:
 
 ## 7. 화면
 
-![데스크톱](img/web-desktop.png)
-![390px](img/web-390.png)
+![데스크톱](img/example-web.png)
