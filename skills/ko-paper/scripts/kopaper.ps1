@@ -36,6 +36,15 @@ if (-not $env:KOPAPER_BACKEND) {
 }
 
 $VenvPython = Join-Path $Root '.venv\Scripts\python.exe'
+# The BabelDOC release ko-paper's layout fixes are written against. bitstring 5 dropped BitStream,
+# which BabelDOC imports, so a fresh install without the cap fails to start.
+$BabeldocVersion = '0.5.24'
+function BabeldocCurrent {
+    if ($env:KOPAPER_BABELDOC_BIN) { return $true }
+    $ErrorActionPreference = 'Continue'
+    $list = (uv tool list 2>$null) | Out-String
+    return $list -match "(?m)^babeldoc v$([regex]::Escape($BabeldocVersion))\s*$"
+}
 function BabeldocPython { Join-Path ((uv tool dir) | Out-String).Trim() 'babeldoc\Scripts\python.exe' }
 
 function Setup {
@@ -48,11 +57,11 @@ function Setup {
         { -not $_ } { Fail 'neither Claude Code (claude) nor Codex (codex) is installed; install and log in to one' }
         default { Fail "unknown KOPAPER_BACKEND=$($env:KOPAPER_BACKEND) (claude-code, codex, anthropic-api)" }
     }
-    if (-not (Need 'babeldoc') -and -not $env:KOPAPER_BABELDOC_BIN) {
-        [Console]::Error.WriteLine('-> installing BabelDOC (uv tool install babeldoc)')
+    if (-not (BabeldocCurrent)) {
+        [Console]::Error.WriteLine("-> installing BabelDOC $BabeldocVersion (uv tool install)")
         # 3.12: the most common build of every compiled dependency, so the best reputation with
         # Smart App Control. BabelDOC doesn't support 3.14 anyway.
-        uv tool install --python 3.12 babeldoc
+        uv tool install --force --python 3.12 "babeldoc==$BabeldocVersion" --with 'bitstring<5'
         if ($LASTEXITCODE -ne 0) { Fail 'uv tool install babeldoc failed' }
     }
     # Always sync: after an update the editable install has new code but maybe not its new dependencies.
@@ -113,7 +122,7 @@ if ($cmd -eq 'doctor') {
     exit 0
 }
 
-if (-not (Test-Path $VenvPython) -or -not (Need 'babeldoc')) { Setup }
+if (-not (Test-Path $VenvPython) -or -not (BabeldocCurrent)) { Setup }
 $rest = if ($args.Count -gt 0) { $args } else { @('serve', '--open') }
 # python -m, not the venv's kopaper.exe: that file is generated per install, so Smart App Control never knows it.
 & $VenvPython -m kopaper @rest
