@@ -9,9 +9,13 @@ import pytest
 REPO = Path(__file__).resolve().parents[1]
 
 STUBS = {
-    # uv sync → a fake kopaper that echoes its arguments; other uv calls succeed silently.
-    "uv": '#!/bin/sh\nif [ "$1" = sync ]; then mkdir -p .venv/bin; '
-          'printf \'#!/bin/sh\\necho "kopaper $*"\\n\' > .venv/bin/kopaper; chmod +x .venv/bin/kopaper; fi\n',
+    # A python that passes `-c "import ..."` (or fails with $FAKE_IMPORT_ERROR) and echoes `-m kopaper ...`.
+    "fakepython": '#!/bin/sh\nif [ "$1" = -c ]; then [ -z "$FAKE_IMPORT_ERROR" ] || { echo "$FAKE_IMPORT_ERROR" >&2; exit 1; }; '
+                  'exit 0; fi\nshift 2\necho "kopaper $*"\n',
+    # uv sync → the venv gets fakepython; `uv tool dir` → a BabelDOC tool env with fakepython.
+    "uv": '#!/bin/sh\nd="$(dirname "$0")"\n'
+          'if [ "$1" = sync ]; then mkdir -p .venv/bin; cp "$d/fakepython" .venv/bin/python; fi\n'
+          'if [ "$1 $2" = "tool dir" ]; then echo "$d/tools"; fi\n',
     "claude": "#!/bin/sh\nexit 0\n",  # `claude auth status` → logged in
     "babeldoc": "#!/bin/sh\nexit 0\n",
 }
@@ -42,6 +46,8 @@ def sandbox(tmp_path):
     for name, body in STUBS.items():
         (stubs / name).write_text(body)
         (stubs / name).chmod(0o755)
+    (stubs / "tools" / "babeldoc" / "bin").mkdir(parents=True)
+    shutil.copy2(stubs / "fakepython", stubs / "tools" / "babeldoc" / "bin" / "python")
     home = tmp_path / "home"
     (home / ".claude" / "skills" / "ko-paper").mkdir(parents=True)  # someone else's skill, must be backed up
     env = {"HOME": str(home), "PATH": f"{stubs}:{Path(shutil.which('git')).parent}:/usr/bin:/bin",
@@ -111,3 +117,24 @@ def test_api_key_counts_as_logged_in(sandbox, tmp_path):
     assert r.returncode != 0 and "claude auth login" in r.stderr
     r = run(["bash", str(REPO / "install.sh")], {**env, "ANTHROPIC_API_KEY": "sk-test"})
     assert r.returncode == 0 and "kopaper ready" in r.stdout, r.stdout + r.stderr
+
+
+def test_installed_backend_is_kept(sandbox, tmp_path):
+    home, env = sandbox
+    (tmp_path / "stubs" / "codex").write_text("#!/bin/sh\nexit 0\n")
+    (tmp_path / "stubs" / "codex").chmod(0o755)
+    r = run(["bash", str(REPO / "install.sh"), "--with-codex"], env)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (home / ".ko-paper" / "backend").read_text().strip() == "codex"
+    r = run([str(home / ".local" / "bin" / "ko-paper"), "doctor"], env)  # claude is installed and logged in too
+    assert "backend:  codex" in r.stdout, r.stdout + r.stderr
+
+
+def test_doctor_reports_blocked_native_module(sandbox):
+    home, env = sandbox
+    assert run(["bash", str(REPO / "install.sh")], env).returncode == 0
+    err = ("ImportError: DLL load failed while importing _mupdf: "
+           "An Application Control policy has blocked this file. (os error 4551)")
+    r = run([str(home / ".local" / "bin" / "ko-paper"), "doctor"], {**env, "FAKE_IMPORT_ERROR": err})
+    assert r.returncode == 1 and "kopaper ready" not in r.stdout
+    assert "ko-paper could not load its compiled modules" in r.stderr and "Smart App Control" in r.stderr
