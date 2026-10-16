@@ -1,6 +1,6 @@
 {
   "name": "ko-paper",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Translate English paper PDFs into Korean while keeping figures, tables, equations and layout in place. BabelDOC handles layout; your own Claude Code login does the translation.",
   "author": { "name": "maenjh" },
   "homepage": "https://github.com/maenjh/ko-paper",
