@@ -42,7 +42,7 @@ def cmd_translate(a: argparse.Namespace) -> int:
 
     backend = ensure_proxy()
     if backend == "claude-code":
-        print("backend: Claude subscription (claude -p). Personal use only.", file=sys.stderr)
+        print("backend: your Claude Code login (claude -p). Local use only, do not expose as a service.", file=sys.stderr)
     opts = Options(
         model=a.model, domain=None if a.domain == "none" else a.domain,
         user_glossaries=[Path(p) for p in a.glossary], pages=a.pages,

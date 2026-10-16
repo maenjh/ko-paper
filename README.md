@@ -2,15 +2,46 @@
 
 영문 논문 PDF를 그림·표·수식 위치를 유지한 채 한글 PDF로 번역한다.
 레이아웃 처리는 [BabelDOC](https://github.com/funstory-ai/BabelDOC), 번역은 Claude가 맡는다.
+Claude Code 스킬로 설치하면 "이 논문 번역해줘" 한마디로 쓸 수 있다.
 
-> 기본 백엔드는 로컬에 로그인된 Claude Code(Claude 구독)다. **본인 개인 사용 전용**이다.
-> 다른 사람에게 서비스로 열려면 `KOPAPER_BACKEND=anthropic-api`(API 키, 종량제)로 바꿔야 한다.
+> **각자 자기 컴퓨터에서, 자기 Claude 계정으로 쓰는 도구다.** 기본 백엔드는 로컬에 로그인된
+> Claude Code(`claude -p`)라서 번역에 쓰는 사용량은 실행한 사람의 구독에서 나간다.
+> 이 백엔드로 서버를 띄워 다른 사람에게 번역을 제공하면 안 된다. 그런 용도라면
+> `KOPAPER_BACKEND=anthropic-api`(API 키, 종량제)를 쓴다. 웹 UI도 항상 127.0.0.1에만 열린다.
 
-## 준비
+## 스킬로 설치 (권장)
+
+준비물: [Claude Code](https://claude.com/claude-code) 로그인, [uv](https://docs.astral.sh/uv/), git.
+BabelDOC과 Python 의존성은 처음 실행할 때 자동으로 설치된다.
+
+**플러그인으로**
+
+```text
+/plugin marketplace add maenjh/ko-paper
+/plugin install ko-paper@ko-paper
+```
+
+**스크립트로** (`~/.ko-paper/src`에 받고 `~/.claude/skills/ko-paper`로 연결)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash
+```
+
+설치 후 Claude Code에서 PDF 경로와 함께 요청하면 된다.
+
+```text
+~/Downloads/attention.pdf 이 논문 번역해줘
+1~3쪽만 한글본으로 뽑아줘
+```
+
+결과는 입력 파일 옆에 `<이름>.ko.pdf`(한글본)와 `<이름>.ko.dual.pdf`(원문 병기본)로 생긴다.
+스킬로 실행할 때 캐시·용어집·작업 로그는 `~/.ko-paper/data`에 쌓인다.
+
+## 직접 설치 (CLI·웹 UI)
 
 - Claude Code 로그인 (`claude` 실행 후 `/login`)
 - BabelDOC: `uv tool install babeldoc`
-- 이 프로젝트: `uv sync` (API 백엔드도 쓰려면 `uv sync --extra api`)
+- 이 저장소: `uv sync` (API 백엔드도 쓰려면 `uv sync --extra api`)
 
 ## 웹 UI
 
@@ -70,7 +101,7 @@ BabelDOC 위에 다음 보정을 더한다. 모두 `src/kopaper/babeldoc_launche
 | `KOPAPER_MAX_CONCURRENCY` | `4` | 동시 Claude 호출 수 |
 | `KOPAPER_EFFORT` | `medium` | API 백엔드의 effort |
 | `KOPAPER_EXTRA_MATH_FONTS` | Cambria Math | 수식으로 취급할 폰트 이름 정규식 |
-| `KOPAPER_DATA` | `./data` | 작업·캐시·로그 위치 |
+| `KOPAPER_DATA` | `./data` (스킬은 `~/.ko-paper/data`) | 작업·캐시·로그 위치 |
 | `KOPAPER_MERGE_TABLE_CELLS` | `1` | `0`이면 표 셀 병합을 끈다 |
 | `KOPAPER_TABLE_LINE_SKIP` | `1.15` | 표 셀 안 줄 간격 |
 
@@ -87,3 +118,11 @@ BabelDOC 위에 다음 보정을 더한다. 모두 `src/kopaper/babeldoc_launche
 ```
 
 작업마다 `data/jobs/<paper_id>/<시각>/`에 명령, 로그, 결과 요약이 남는다.
+
+## 라이선스
+
+[AGPL-3.0-or-later](LICENSE). ko-paper는 AGPL-3.0인 BabelDOC의 내부 모듈을 불러와 패치해 쓰므로
+같은 라이선스를 따른다. 수정한 버전을 배포하거나 네트워크 서비스로 제공하면 소스도 공개해야 한다.
+
+번역 대상 논문의 저작권은 원저자와 출판사에 있다. 번역본은 개인 학습용으로 쓰고,
+재배포하기 전에 원문의 라이선스를 확인한다.
