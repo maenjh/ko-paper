@@ -102,3 +102,12 @@ def test_powershell_scripts_ascii_and_parse(script):
              " if ($e) { $e | % { $_.Message }; exit 1 }")
     r = subprocess.run([pwsh, "-NoProfile", "-c", check], capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_api_key_counts_as_logged_in(sandbox, tmp_path):
+    home, env = sandbox
+    (tmp_path / "stubs" / "claude").write_text("#!/bin/sh\nexit 1\n")  # `claude auth status` → not logged in
+    r = run(["bash", str(REPO / "install.sh")], env)
+    assert r.returncode != 0 and "claude auth login" in r.stderr
+    r = run(["bash", str(REPO / "install.sh")], {**env, "ANTHROPIC_API_KEY": "sk-test"})
+    assert r.returncode == 0 and "kopaper ready" in r.stdout, r.stdout + r.stderr

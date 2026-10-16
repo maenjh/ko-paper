@@ -68,7 +68,8 @@ fi
 
 logged_in() {
   case "$KOPAPER_BACKEND" in
-    claude-code) claude auth status >/dev/null 2>&1 ;;
+    # claude -p also runs on ANTHROPIC_API_KEY, so don't send the user to a browser login for nothing.
+    claude-code) [ -n "${ANTHROPIC_API_KEY:-}" ] || claude auth status >/dev/null 2>&1 ;;
     codex) codex login status >/dev/null 2>&1 ;;
     *) true ;;
   esac

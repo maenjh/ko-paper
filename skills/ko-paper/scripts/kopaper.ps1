@@ -48,7 +48,8 @@ function Setup {
 function LoggedIn {
     $ErrorActionPreference = 'Continue'  # PS 5.1 turns redirected native stderr into errors under 'Stop'
     switch ($env:KOPAPER_BACKEND) {
-        'claude-code' { claude auth status *> $null; return $LASTEXITCODE -eq 0 }
+        # claude -p also runs on ANTHROPIC_API_KEY, so don't send the user to a browser login for nothing.
+        'claude-code' { if ($env:ANTHROPIC_API_KEY) { return $true }; claude auth status *> $null; return $LASTEXITCODE -eq 0 }
         'codex' { codex login status *> $null; return $LASTEXITCODE -eq 0 }
         default { return $true }
     }
