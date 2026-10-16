@@ -160,6 +160,7 @@ class JobManager:
         o = job["options"]
         opts = pipeline.Options(
             model=o.get("model", "sonnet"),
+            lang_in=o.get("lang", "en"),
             domain=None if o.get("domain") in (None, "", "none") else o["domain"],
             user_glossaries=[d / "user_glossary.csv"] if o.get("user_glossary") else [],
             pages=o.get("pages") or None,

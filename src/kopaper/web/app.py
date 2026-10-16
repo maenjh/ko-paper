@@ -9,13 +9,16 @@ from fastapi.responses import FileResponse, HTMLResponse
 
 from .. import glossary as gl
 from .. import usage
-from ..config import BACKEND, GLOSSARY_DIR
+from ..config import BACKEND, GLOSSARY_DIR, SOURCE_LANGS
 from ..proxy.server import create_app
 from .jobs import JobManager
 
 STATIC = Path(__file__).with_name("static")
 MAX_PDF_BYTES = 100 * 1024 * 1024
 MODELS = ["sonnet", "opus", "haiku"]
+LANG_NAMES = {"en": "영어", "de": "독일어", "fr": "프랑스어", "es": "스페인어", "it": "이탈리아어",
+              "pt": "포르투갈어", "nl": "네덜란드어", "ru": "러시아어", "ja": "일본어", "zh": "중국어"}
+assert LANG_NAMES.keys() == SOURCE_LANGS.keys()
 
 
 def create_web_app(manager: JobManager | None = None, start_worker: bool = True, backend: str = BACKEND) -> FastAPI:
@@ -32,7 +35,8 @@ def create_web_app(manager: JobManager | None = None, start_worker: bool = True,
     @app.get("/api/options")
     async def options():
         domains = sorted(p.stem for p in GLOSSARY_DIR.glob("*.csv"))
-        return {"backend": backend, "models": MODELS, "domains": domains, "default_domain": "cs_ml"}
+        return {"backend": backend, "models": MODELS, "domains": domains, "default_domain": "cs_ml",
+                "langs": LANG_NAMES, "default_lang": "en"}
 
     @app.get("/api/jobs")
     async def list_jobs():
@@ -42,6 +46,7 @@ def create_web_app(manager: JobManager | None = None, start_worker: bool = True,
     async def create_job(
         file: UploadFile = File(...),
         model: str = Form("sonnet"),
+        lang: str = Form("en"),
         domain: str = Form("cs_ml"),
         output: str = Form("both"),
         pages: str = Form(""),
@@ -57,6 +62,8 @@ def create_web_app(manager: JobManager | None = None, start_worker: bool = True,
             raise HTTPException(400, "PDF 파일이 아닙니다.")
         if model not in MODELS:
             raise HTTPException(400, f"알 수 없는 모델: {model}")
+        if lang not in LANG_NAMES:
+            raise HTTPException(400, f"지원하지 않는 원문 언어: {lang}")
         if output not in ("both", "mono", "dual"):
             raise HTTPException(400, f"알 수 없는 출력 형식: {output}")
         if domain not in ("none", *(p.stem for p in GLOSSARY_DIR.glob("*.csv"))):
@@ -67,7 +74,7 @@ def create_web_app(manager: JobManager | None = None, start_worker: bool = True,
         gbytes = None
         if glossary is not None and glossary.filename:
             gbytes = await glossary.read(2 * 1024 * 1024)
-        opts = {"model": model, "domain": domain, "output": output, "pages": pages.replace(" ", ""),
+        opts = {"model": model, "lang": lang, "domain": domain, "output": output, "pages": pages.replace(" ", ""),
                 "reextract_glossary": reextract_glossary, "ocr": ocr, "review": review}
         return jobs.create(file.filename or "paper.pdf", data, opts, gbytes)
 

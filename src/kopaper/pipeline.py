@@ -15,12 +15,13 @@ from pathlib import Path
 from typing import Callable
 
 from . import glossary
-from .config import BABELDOC_BIN, DATA_DIR, JOBS_DIR, PROMPTS_DIR, PROXY_URL
+from .config import BABELDOC_BIN, DATA_DIR, JOBS_DIR, PROMPTS_DIR, PROXY_URL, SOURCE_LANGS
 
 
 @dataclass
 class Options:
     model: str = "sonnet"
+    lang_in: str = "en"  # source language code, see config.SOURCE_LANGS
     domain: str | None = "cs_ml"
     user_glossaries: list[Path] = field(default_factory=list)
     pages: str | None = None
@@ -96,12 +97,28 @@ def babeldoc_entry(math_font_fix: bool) -> list[str]:
     return [exe]
 
 
+def system_prompt(lang_in: str) -> str:
+    text = (PROMPTS_DIR / "translate_ko.txt").read_text(encoding="utf-8")
+    text = text.replace("{source}", SOURCE_LANGS[lang_in])
+    if lang_in != "en":
+        # Put the extra rule under "Content that must translate", right after the caption rule.
+        anchor = '"Fig." → "그림").\n'
+        text = text.replace(anchor, anchor + f"- Translate {SOURCE_LANGS[lang_in]} caption labels the same way "
+                            "(the local words for \"Figure\" and \"Table\" → \"그림\", \"표\").\n", 1)
+    return text
+
+
+def proxy_model(opts: Options) -> str:
+    """Model name sent to the proxy: `sonnet`, `sonnet@de`, `sonnet+review`, `sonnet@de+review`."""
+    return opts.model + (f"@{opts.lang_in}" if opts.lang_in != "en" else "") + ("+review" if opts.review else "")
+
+
 def babeldoc_cmd(src: Path, job_dir: Path, opts: Options, glossary_file: Path | None, reuse: bool) -> list[str]:
     cmd = [
-        *babeldoc_entry(opts.math_font_fix), "--files", str(src), "--lang-in", "en", "--lang-out", "ko",
+        *babeldoc_entry(opts.math_font_fix), "--files", str(src), "--lang-in", opts.lang_in, "--lang-out", "ko",
         "--openai", "--openai-base-url", opts.proxy_url, "--openai-api-key", "kopaper-local",
-        "--openai-model", opts.model + ("+review" if opts.review else ""),
-        "--custom-system-prompt", (PROMPTS_DIR / "translate_ko.txt").read_text(encoding="utf-8"),
+        "--openai-model", proxy_model(opts),
+        "--custom-system-prompt", system_prompt(opts.lang_in),
         "--min-text-length", str(opts.min_text_length),
         "--translate-table-text",
         "--qps", str(opts.qps), "--pool-max-workers", str(opts.qps),

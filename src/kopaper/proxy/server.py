@@ -16,7 +16,7 @@ import uuid
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from ..config import BACKEND, DATA_DIR, PROXY_HOST, PROXY_PORT
+from ..config import BACKEND, DATA_DIR, PROXY_HOST, PROXY_PORT, SOURCE_LANGS
 from .backends import BackendError, make_backend
 
 CACHE_DB = DATA_DIR / "proxy_cache.sqlite"
@@ -24,13 +24,13 @@ USAGE_LOG = DATA_DIR / "proxy_usage.jsonl"
 MAX_CONCURRENCY = int(os.environ.get("KOPAPER_MAX_CONCURRENCY", "4"))
 
 BASE_SYSTEM = (
-    "You are a professional translator of academic papers from English into Korean. "
+    "You are a professional translator of academic papers from {source} into Korean. "
     "Follow the user's instructions exactly. "
     "Output only what is requested, with no commentary."
 )
 JSON_SUFFIX = " Respond with valid JSON only. Do not wrap it in code fences."
 REVIEW_SYSTEM = (
-    "You are the reviewing editor of an English-to-Korean academic translation. You receive the original "
+    "You are the reviewing editor of a {source}-to-Korean academic translation. You receive the original "
     "translation task and a draft answer. Fix mistranslations, omissions, additions, inconsistent terminology, "
     "and Korean translationese. Keep everything else identical: the same output format, the same ids, every "
     "placeholder, tag, formula, and citation marker. Keep the length close to the draft. "
@@ -55,6 +55,15 @@ def flatten_messages(messages: list[dict]) -> tuple[str, str]:
         else:
             convo.append(f"[{m.get('role')}]\n{c}")
     return "\n\n".join(sys_parts), "\n\n".join(convo)
+
+
+def parse_model(name: str) -> tuple[str, str, bool]:
+    """`sonnet@de+review` → ("sonnet", "German", True). No `@lang` means English."""
+    review = name.endswith(REVIEW_SUFFIX)
+    if review:
+        name = name[: -len(REVIEW_SUFFIX)]
+    name, _, lang = name.partition("@")
+    return name or "sonnet", SOURCE_LANGS.get(lang or "en", "English"), review
 
 
 def strip_fence(text: str) -> str:
@@ -109,13 +118,10 @@ def create_app(backend_name: str = BACKEND) -> FastAPI:
     @app.post("/v1/chat/completions")
     async def chat(req: Request):
         body = await req.json()
-        model = body.get("model") or "sonnet"
-        review = model.endswith(REVIEW_SUFFIX)
-        if review:
-            model = model[: -len(REVIEW_SUFFIX)] or "sonnet"
+        model, source, review = parse_model(body.get("model") or "sonnet")
         extra_sys, prompt = flatten_messages(body.get("messages", []))
         json_mode = (body.get("response_format") or {}).get("type") == "json_object"
-        system = BASE_SYSTEM + ("\n\n" + extra_sys if extra_sys else "") + (JSON_SUFFIX if json_mode else "")
+        system = BASE_SYSTEM.format(source=source) + ("\n\n" + extra_sys if extra_sys else "") + (JSON_SUFFIX if json_mode else "")
 
         key = hashlib.sha256(json.dumps([backend.name, model, system, prompt, review]).encode()).hexdigest()
         t0 = time.time()
@@ -133,7 +139,7 @@ def create_app(backend_name: str = BACKEND) -> FastAPI:
             text, tin, tout = strip_fence(c.text), c.input_tokens, c.output_tokens
             if review:
                 rprompt = f"## Original task\n\n{prompt}\n\n## Draft answer\n\n{text}"
-                rsys = REVIEW_SYSTEM + ("\n\n" + extra_sys if extra_sys else "") + (JSON_SUFFIX if json_mode else "")
+                rsys = REVIEW_SYSTEM.format(source=source) + ("\n\n" + extra_sys if extra_sys else "") + (JSON_SUFFIX if json_mode else "")
                 try:
                     async with sem:
                         c2 = await backend.complete(rsys, rprompt, model)

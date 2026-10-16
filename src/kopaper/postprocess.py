@@ -11,7 +11,13 @@ from pathlib import Path
 
 import pymupdf
 
-_HEADING = re.compile(r"^(\d+\.?\s*)?(References|REFERENCES|Bibliography|BIBLIOGRAPHY|Works Cited)$")
+_HEADING = re.compile(
+    r"^(\d+\.?\s*)?(References|REFERENCES|Bibliography|BIBLIOGRAPHY|Works Cited"
+    # de, fr, es, it, pt, nl, ru, ja/zh
+    r"|(?i:Literatur|Literaturverzeichnis|Quellenverzeichnis|Références|Références bibliographiques|Bibliographie"
+    r"|Referencias|Bibliografía|Bibliografia|Riferimenti bibliografici|Referências|Referências bibliográficas"
+    r"|Literatuur|Referenties|Литература|Список литературы)|参考文献)$"
+)
 _APPENDIX = re.compile(r"^(Appendix|APPENDIX|Supplementary|SUPPLEMENTARY)\b|^A(\.\d*)?\s+[A-Z][A-Za-z].{2,60}$")
 _REF_LINE = re.compile(r"^\[\d+\]|\b(19|20)\d{2}[a-z]?\b")
 
