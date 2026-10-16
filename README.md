@@ -76,22 +76,22 @@ git이 필요하다(`winget install --id Git.Git -e`). Windows의 Claude Code는
 
 `ko-paper update`(또는 설치 명령을 다시 실행)로 최신 버전을 받는다. 처음 설치한 에이전트에만 다시 설치한다.
 
-## ChatGPT·Claude 앱만 쓴다면
+## ChatGPT·Claude·Codex 앱만 쓴다면
 
-터미널 도구 없이 ChatGPT나 Claude **채팅 앱**만 쓰는 사람도 설치할 수 있다. 채팅 앱은 내 컴퓨터에서
-명령을 직접 실행하지 못하므로, 앱이 터미널에 붙여 넣을 명령을 하나씩 알려 주고 결과를 보고
-다음 단계를 안내하는 방식이다. 문구에 "묻지 말라"를 넣어 두어, 앱이 첫 답변에서 바로 설치 명령을 준다. 번역은 내 Claude 또는 ChatGPT 구독으로 돌아간다(Claude 구독은
+터미널 도구 없이 ChatGPT, Claude, Codex **앱**만 쓰는 사람도 설치할 수 있다. 명령을 직접 실행할 수 있는 앱
+(Claude 데스크톱 앱의 Code·Cowork, Codex 앱)은 알아서 설치까지 끝낸다. 실행할 수 없는 채팅 앱은 터미널에
+붙여 넣을 명령을 알려 주고 결과를 보고 다음 단계를 안내한다. 문구에 "묻지 말라"를 넣어 두어, 앱이 첫 답변에서 바로 설치 명령을 준다. 번역은 내 Claude 또는 ChatGPT 구독으로 돌아간다(Claude 구독은
 Claude Code로, ChatGPT 구독은 Codex CLI로 로그인해서 쓴다).
 
-아래 글을 그대로 복사해 ChatGPT나 Claude 앱에 붙여 넣는다.
+아래 글을 그대로 복사해 ChatGPT, Claude, Codex 앱에 붙여 넣는다.
 
 ```text
 내 컴퓨터에 ko-paper(https://github.com/maenjh/ko-paper)를 설치하려고 해.
 영어 등 외국어 논문 PDF를 레이아웃 그대로 한글 PDF로 번역해 주는 무료 오픈소스 도구야.
-너는 명령을 직접 실행할 수 없으니 내가 붙여 넣을 명령을 알려 줘. 나에게 질문하지 말고 아래대로
-첫 답변에서 바로 설치 명령을 줘.
+나에게 질문하지 말고 아래대로 해 줘. 네가 명령을 직접 실행할 수 없는 채팅이면 첫 답변에서 바로
+내가 붙여 넣을 설치 명령을 줘(실행할 수 있으면 마지막 5번을 따라).
 
-1. 구독은 묻지 마. 네가 ChatGPT면 내 구독은 ChatGPT(Codex 사용), 네가 Claude면 Claude 구독
+1. 구독은 묻지 마. 네가 ChatGPT나 Codex면 내 구독은 ChatGPT(Codex 사용), 네가 Claude면 Claude 구독
    (Claude Code 사용)으로 정해.
 2. 운영체제도 묻지 마. 아래에서 네 구독에 맞는 두 줄(macOS·Linux용, Windows용)을 함께 보여 주고
    "Mac은 터미널(Spotlight에서 '터미널'), Windows는 시작 메뉴의 PowerShell에 붙여 넣으라"고 알려 줘.
@@ -109,6 +109,11 @@ Claude Code로, ChatGPT 구독은 Codex CLI로 로그인해서 쓴다).
    창을 새로 열고 ko-paper doctor. "kopaper ready"가 나오면 ko-paper 를 실행하면 브라우저에
    번역 화면이 열리고, 거기에 PDF를 끌어다 놓으면 된다.
 4. 내가 오류 출력을 붙여 넣으면 원인과 해결 명령만 짧게 알려 줘. 비밀번호나 API 키는 묻지 마.
+5. 네가 내 컴퓨터에서 명령을 직접 실행할 수 있으면(Claude 데스크톱 앱의 Code·Cowork, Codex 앱 등)
+   위 명령을 나에게 주지 말고 네가 알아서 설치해. 운영체제는 직접 확인하고(uname, $env:OS), 네 구독에
+   맞는 명령을 실행해. 샌드박스나 권한에 막히면 권한을 요청해서 다시 실행하고, 실패 줄(✗ 또는 [x])은
+   안내대로 직접 고친 뒤 ko-paper doctor 로 "kopaper ready"까지 확인해. 브라우저 로그인처럼 내가 해야
+   하는 일만 마지막에 한 줄로 알려 줘.
 ```
 
 설치가 끝나면 앱 없이도 쓸 수 있다.
