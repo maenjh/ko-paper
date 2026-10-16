@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install ko-paper (macOS, Linux, WSL).
+# Install ko-paper (macOS, Linux).
 #   curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash
 #   ... | bash -s -- --with-claude-code   also install Claude Code (for Claude subscribers)
 #   ... | bash -s -- --with-codex         also install Codex CLI (for ChatGPT subscribers)
