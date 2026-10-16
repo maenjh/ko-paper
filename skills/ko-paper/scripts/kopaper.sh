@@ -89,6 +89,9 @@ if [ "${1:-}" = "doctor" ]; then
   exit 0
 fi
 
-[ -x "$ROOT/.venv/bin/kopaper" ] && need babeldoc || setup
+kp() {  # the venv's kopaper; Scripts/kopaper.exe under Git Bash on Windows
+  if [ -f "$ROOT/.venv/Scripts/kopaper.exe" ]; then echo "$ROOT/.venv/Scripts/kopaper.exe"; else echo "$ROOT/.venv/bin/kopaper"; fi
+}
+[ -x "$(kp)" ] && need babeldoc || setup
 [ $# -gt 0 ] || set -- serve --open
-exec "$ROOT/.venv/bin/kopaper" "$@"
+exec "$(kp)" "$@"

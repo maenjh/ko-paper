@@ -16,6 +16,10 @@ BabelDOC 설치와 `uv sync`를 알아서 한다.
 K="<이 스킬의 base directory>/scripts/kopaper.sh"
 ```
 
+Windows에서 셸이 PowerShell이면(Codex 등) 같은 인자로 `kopaper.ps1`을 쓴다:
+`powershell -NoProfile -ExecutionPolicy Bypass -File "<base directory>\scripts\kopaper.ps1" translate "C:\path\paper.pdf"`.
+Windows의 Claude Code는 Git Bash로 실행하므로 `kopaper.sh` 그대로 된다.
+
 ## 절차
 
 1. **입력 확인.** 경로가 실제 PDF인지 보고, 페이지 수를 알 수 있으면 예상 시간과 함께 알린다

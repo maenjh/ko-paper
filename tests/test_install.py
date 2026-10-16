@@ -89,3 +89,16 @@ def test_update_keeps_chosen_agent(sandbox):
     assert r.returncode == 0, r.stdout + r.stderr
     assert (home / ".codex" / "skills" / "ko-paper" / ".kopaper-home").exists()
     assert not (claude_skill / ".kopaper-home").exists(), "update installed into an agent the user did not pick"
+
+
+@pytest.mark.parametrize("script", ["install.ps1", "skills/ko-paper/scripts/kopaper.ps1"])
+def test_powershell_scripts_ascii_and_parse(script):
+    path = REPO / script
+    path.read_bytes().decode("ascii")  # Windows PowerShell 5.1 misreads non-ASCII in BOM-less files
+    pwsh = shutil.which("pwsh") or os.environ.get("KOPAPER_TEST_PWSH")
+    if not pwsh:
+        pytest.skip("pwsh not installed")
+    check = (f"$e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile('{path}',[ref]$null,[ref]$e);"
+             " if ($e) { $e | % { $_.Message }; exit 1 }")
+    r = subprocess.run([pwsh, "-NoProfile", "-c", check], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stdout + r.stderr

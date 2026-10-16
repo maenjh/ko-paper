@@ -180,6 +180,6 @@ def create_app(backend_name: str = BACKEND) -> FastAPI:
 
 
 def _log(row: dict) -> None:
-    with USAGE_LOG.open("a") as f:
+    with USAGE_LOG.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
