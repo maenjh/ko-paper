@@ -27,6 +27,24 @@ Claude Code나 Codex에 스킬로 설치하면 "이 논문 번역해줘" 한마�
 
 ![ko-paper 웹 UI](docs/img/example-web.png)
 
+## 공유·사용 전에 알아 둘 것
+
+- **번역은 내 구독 사용량을 쓴다.** 각자 자기 Claude 또는 ChatGPT 계정으로 번역한다. 예를 들어 31쪽 논문을
+  Claude Sonnet으로 번역했을 때 호출 약 200회, 토큰 약 67만 개가 들었다. 구독 등급에 따라 한도에 금방
+  닿을 수 있다. 같은 논문을 다시 번역하면 캐시를 써서 훨씬 적게 든다.
+- **논문 본문이 AI 회사로 전송된다.** 번역을 위해 PDF의 텍스트가 Anthropic(Claude) 또는 OpenAI(Codex)로 간다.
+  기밀 문서, 공개 전 원고, 개인정보가 담긴 문서에는 쓰지 않는다. 일반 모드는 참고문헌을 보내지 않지만,
+  간이 모드는 에이전트가 PDF 전체를 읽는다.
+- **번역본은 개인 학습용이다.** 원 논문의 저작권은 저자와 출판사에 있다. 번역한 PDF를 다시 배포하기 전에
+  원문의 라이선스를 확인한다.
+- **내 구독으로 서비스를 열지 않는다.** 이 도구로 서버를 띄워 다른 사람에게 번역을 제공하면 안 된다.
+  그런 용도라면 `KOPAPER_BACKEND=anthropic-api`(API 키, 종량제)를 쓴다.
+- **알려진 한계:** Windows에서 Smart App Control이 켜져 있으면 레이아웃 유지 번역이 막힌다(아래
+  [Windows Smart App Control](#windows-smart-app-control)). 작은 대문자 제목, 회전된 축 이름처럼 일부 레이아웃은
+  완벽하지 않다([레이아웃 보정](#레이아웃-보정)).
+- **문제가 생기면** [이슈](https://github.com/maenjh/ko-paper/issues)로 남겨 준다. 운영체제, 설치 방법,
+  `ko-paper doctor` 출력을 함께 적어 주면 빨리 고칠 수 있다.
+
 ## 스킬로 설치 (권장)
 
 준비물: [Claude Code](https://claude.com/claude-code) 또는 [Codex](https://github.com/openai/codex) 로그인,
