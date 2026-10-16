@@ -54,6 +54,11 @@ main() {
       echo "✗ Codex needs Homebrew or Node.js (npm). Install one of them and re-run." >&2; exit 1
     fi
   fi
+  # Remember the subscription the user installed for, so later runs don't switch to another CLI.
+  if [ "$with_codex$with_claude_code" != "00" ]; then
+    mkdir -p "$HOME/.ko-paper"
+    if [ "$with_codex" = 1 ]; then echo codex; else echo claude-code; fi > "$HOME/.ko-paper/backend"
+  fi
 
   if [ -d "$SRC/.git" ]; then
     echo "→ updating $SRC"

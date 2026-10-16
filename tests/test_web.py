@@ -145,3 +145,16 @@ def test_cancelled_job_is_not_started(tmp_path, monkeypatch):
     mgr.cancel(jid)
     mgr._run(jid)  # the worker picked the row just before the cancel landed
     assert not ran and c.get(f"/api/jobs/{jid}").json()["status"] == "cancelled"
+
+
+def test_describe_error_shows_first_cause():
+    from kopaper.web.jobs import describe_error
+
+    try:
+        try:
+            raise ImportError("DLL load failed while importing _mupdf: blocked")
+        except ImportError:
+            raise ModuleNotFoundError("No module named 'mupdf'")
+    except ModuleNotFoundError as e:
+        msg = describe_error(e)
+    assert msg.startswith("ImportError: DLL load failed") and "Smart App Control" in msg

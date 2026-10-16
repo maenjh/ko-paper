@@ -19,11 +19,24 @@ $env:PYTHONUTF8 = '1'  # Korean text in logs and glossaries, whatever the consol
 function Need($name) { [bool](Get-Command $name -ErrorAction SilentlyContinue) }
 function Fail($msg) { [Console]::Error.WriteLine("[x] $msg"); exit 1 }
 
-# Backend: Claude Code if it is installed, otherwise Codex. KOPAPER_BACKEND overrides.
-if (-not $env:KOPAPER_BACKEND) {
-    if (Need 'claude') { $env:KOPAPER_BACKEND = 'claude-code' }
-    elseif (Need 'codex') { $env:KOPAPER_BACKEND = 'codex' }
+function Quiet([scriptblock]$block) {  # run a native command, ignore its output, return success
+    $ErrorActionPreference = 'Continue'  # PS 5.1 turns redirected native stderr into errors under 'Stop'
+    & $block *> $null
+    return $LASTEXITCODE -eq 0
 }
+
+# Backend: $env:KOPAPER_BACKEND, else the one picked at install (~\.ko-paper\backend),
+# else Claude Code when it is the only CLI or is logged in, else Codex.
+$BackendFile = Join-Path $HOME '.ko-paper\backend'
+if (-not $env:KOPAPER_BACKEND -and (Test-Path $BackendFile)) { $env:KOPAPER_BACKEND = (Get-Content $BackendFile -Raw).Trim() }
+if (-not $env:KOPAPER_BACKEND) {
+    if ((Need 'claude') -and (-not (Need 'codex') -or $env:ANTHROPIC_API_KEY -or (Quiet { claude auth status }))) {
+        $env:KOPAPER_BACKEND = 'claude-code'
+    } elseif (Need 'codex') { $env:KOPAPER_BACKEND = 'codex' }
+}
+
+$VenvPython = Join-Path $Root '.venv\Scripts\python.exe'
+function BabeldocPython { Join-Path ((uv tool dir) | Out-String).Trim() 'babeldoc\Scripts\python.exe' }
 
 function Setup {
     if (-not (Need 'uv')) { Fail 'uv is missing. Run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"' }
@@ -36,7 +49,9 @@ function Setup {
     }
     if (-not (Need 'babeldoc') -and -not $env:KOPAPER_BABELDOC_BIN) {
         [Console]::Error.WriteLine('-> installing BabelDOC (uv tool install babeldoc)')
-        uv tool install babeldoc
+        # 3.12: the most common build of every compiled dependency, so the best reputation with
+        # Smart App Control. BabelDOC doesn't support 3.14 anyway.
+        uv tool install --python 3.12 babeldoc
         if ($LASTEXITCODE -ne 0) { Fail 'uv tool install babeldoc failed' }
     }
     # Always sync: after an update the editable install has new code but maybe not its new dependencies.
@@ -46,13 +61,27 @@ function Setup {
 }
 
 function LoggedIn {
-    $ErrorActionPreference = 'Continue'  # PS 5.1 turns redirected native stderr into errors under 'Stop'
     switch ($env:KOPAPER_BACKEND) {
         # claude -p also runs on ANTHROPIC_API_KEY, so don't send the user to a browser login for nothing.
-        'claude-code' { if ($env:ANTHROPIC_API_KEY) { return $true }; claude auth status *> $null; return $LASTEXITCODE -eq 0 }
-        'codex' { codex login status *> $null; return $LASTEXITCODE -eq 0 }
+        'claude-code' { return [bool]$env:ANTHROPIC_API_KEY -or (Quiet { claude auth status }) }
+        'codex' { return Quiet { codex login status } }
         default { return $true }
     }
+}
+
+# Import the compiled modules once: Smart App Control blocks unsigned ones only when they load.
+function NativeCheck($what, $python, $imports) {
+    $ErrorActionPreference = 'Continue'
+    $out = & $python -c "import $imports" 2>&1 | Out-String
+    if ($LASTEXITCODE -eq 0) { return }
+    [Console]::Error.WriteLine("[x] $what could not load its compiled modules:")
+    ($out -split "`n" | Where-Object { $_ -match 'Error' } | Select-Object -First 3) | ForEach-Object { [Console]::Error.WriteLine("    $($_.Trim())") }
+    $sac = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy' -Name VerifiedAndReputablePolicyState -ErrorAction SilentlyContinue).VerifiedAndReputablePolicyState
+    if ($out -match 'DLL load failed' -and $sac -in 1, 2) {
+        [Console]::Error.WriteLine('  Windows Smart App Control blocked an unsigned file. Do not turn it off:')
+        [Console]::Error.WriteLine('  see https://github.com/maenjh/ko-paper#windows-smart-app-control')
+    }
+    exit 1
 }
 
 $cmd = if ($args.Count -gt 0) { $args[0] } else { '' }
@@ -69,6 +98,10 @@ if ($cmd -eq 'update') {
 
 if ($cmd -eq 'doctor') {
     Setup
+    NativeCheck 'ko-paper' $VenvPython 'pymupdf'
+    if (-not $env:KOPAPER_BABELDOC_BIN) {
+        NativeCheck 'BabelDOC' (BabeldocPython) 'pymupdf, onnxruntime, cv2, numpy, babeldoc.format.pdf.high_level'
+    }
     if (-not (LoggedIn)) {
         if ($env:KOPAPER_BACKEND -eq 'claude-code') { Fail 'Claude Code is installed but not logged in. Run: claude auth login' }
         Fail 'Codex is installed but not logged in. Run: codex login'
@@ -78,8 +111,8 @@ if ($cmd -eq 'doctor') {
     exit 0
 }
 
-$kp = Join-Path $Root '.venv\Scripts\kopaper.exe'
-if (-not (Test-Path $kp) -or -not (Need 'babeldoc')) { Setup }
+if (-not (Test-Path $VenvPython) -or -not (Need 'babeldoc')) { Setup }
 $rest = if ($args.Count -gt 0) { $args } else { @('serve', '--open') }
-& $kp @rest
+# python -m, not the venv's kopaper.exe: that file is generated per install, so Smart App Control never knows it.
+& $VenvPython -m kopaper @rest
 exit $LASTEXITCODE

@@ -41,6 +41,16 @@ COLUMNS = ["id", "name", "status", "stage", "progress", "options", "result", "er
            "created", "started", "finished"]
 
 
+
+def describe_error(e: BaseException) -> str:
+    """The first error in the chain: PyMuPDF's "No module named 'mupdf'" hides the DLL block that caused it."""
+    while e.__context__ is not None:
+        e = e.__context__
+    msg = f"{type(e).__name__}: {e}"
+    if "DLL load failed" in msg:
+        msg += " — Windows Smart App Control이 서명 없는 파일을 막았을 수 있습니다. `ko-paper doctor`로 확인하세요."
+    return msg
+
 class JobManager:
     def __init__(self, db_path: Path = DB_PATH, work_dir: Path = WEB_DIR, translate=None):
         self.db_path = db_path
@@ -203,7 +213,7 @@ class JobManager:
         except pipeline.Cancelled:
             self._update(job_id, status="cancelled", stage="취소됨", finished=str(time.time()))
         except Exception as e:  # keep the worker alive
-            self._update(job_id, status="failed", stage="실패", error=f"{type(e).__name__}: {e}",
+            self._update(job_id, status="failed", stage="실패", error=describe_error(e),
                          finished=str(time.time()))
             traceback.print_exc()
         finally:
