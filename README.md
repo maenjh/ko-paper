@@ -62,11 +62,49 @@ curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | b
 # 한쪽에만:  ... | bash -s -- --claude   또는   ... | bash -s -- --codex
 ```
 
-다시 실행하거나 스킬 폴더의 `scripts/kopaper.sh update`를 실행하면 최신 버전으로 갱신된다.
+`ko-paper update`(또는 설치 명령을 다시 실행)로 최신 버전을 받는다. 처음 설치한 에이전트에만 다시 설치한다.
 
-**Claude 앱**: 데스크톱 앱의 Code 탭은 Claude Code와 같은 `~/.claude/skills`를 쓰므로 위 방법으로
-설치하면 그대로 보인다. claude.ai 일반 채팅은 원격 샌드박스에서 돌아 내 컴퓨터의 PDF와
-BabelDOC에 접근할 수 없어 지원하지 않는다.
+## ChatGPT·Claude 앱만 쓴다면
+
+터미널 도구 없이 ChatGPT나 Claude **채팅 앱**만 쓰는 사람도 설치할 수 있다. 채팅 앱은 내 컴퓨터에서
+명령을 직접 실행하지 못하므로, 앱이 터미널에 붙여 넣을 명령을 하나씩 알려 주고 결과를 보고
+다음 단계를 안내하는 방식이다. 번역은 내 Claude 또는 ChatGPT 구독으로 돌아간다(Claude 구독은
+Claude Code로, ChatGPT 구독은 Codex CLI로 로그인해서 쓴다).
+
+아래 글을 그대로 복사해 ChatGPT나 Claude 앱에 붙여 넣는다.
+
+```text
+내 컴퓨터에 ko-paper(https://github.com/maenjh/ko-paper)를 설치하려고 해.
+영어 등 외국어 논문 PDF를 레이아웃 그대로 한글 PDF로 번역해 주는 무료 오픈소스 도구야.
+너는 명령을 직접 실행할 수 없으니, 내가 터미널에 붙여 넣을 명령을 한 번에 하나씩 알려 주고
+내가 결과를 붙여 넣으면 보고 다음 단계를 안내해 줘. 아래 순서를 따라 줘.
+
+1. 내 운영체제를 물어봐. macOS나 Linux면 계속하고, Windows면 먼저 WSL(Ubuntu)을 설치하도록
+   안내한 뒤 WSL 터미널에서 진행해. 터미널 여는 방법도 알려 줘(macOS: Spotlight에서 "터미널").
+2. 내가 Claude 구독(Pro/Max)과 ChatGPT 구독(Plus/Pro) 중 무엇을 쓰는지 물어봐.
+3. 구독에 맞는 설치 명령 하나를 알려 줘.
+   - Claude 구독:
+     curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-claude-code
+   - ChatGPT 구독:
+     curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-codex
+4. 출력에 "✗ ... not logged in"이 있으면 로그인 명령을 알려 줘.
+   Claude는 claude auth login, ChatGPT는 codex login. 브라우저가 열리면 내 계정으로 로그인하면 돼.
+   로그인 후 터미널을 새로 열고 ko-paper doctor 로 다시 점검하게 해 줘.
+5. "✓ kopaper ready"가 나오면 끝. 새 터미널에서 ko-paper 를 실행하면 브라우저에 번역 화면이 열리고,
+   거기에 PDF를 끌어다 놓으면 된다고 알려 줘. 터미널 창은 쓰는 동안 닫지 말라고 말해 줘.
+6. 다른 오류가 나오면 출력 내용을 보고 원인과 해결 명령을 알려 줘. 내 비밀번호나 API 키는 묻지 마.
+```
+
+설치가 끝나면 앱 없이도 쓸 수 있다.
+
+```bash
+ko-paper                                   # 웹 UI를 브라우저로 연다
+ko-paper translate ~/Downloads/paper.pdf   # 터미널에서 바로 번역
+```
+
+**Claude 데스크톱 앱의 Code 탭**은 Claude Code와 같아서, 위 "에이전트에게 맡기기"처럼 말하면 알아서
+설치한다. claude.ai·ChatGPT의 웹 채팅이 자체 샌드박스에서 PDF를 직접 번역하는 것은 지원하지 않는다
+(BabelDOC과 내 구독 로그인이 내 컴퓨터에 있어야 한다).
 
 설치 후 Claude Code에서 PDF 경로와 함께 요청하면 된다.
 
@@ -97,7 +135,7 @@ BabelDOC에 접근할 수 없어 지원하지 않는다.
 - 완료되면 한글본 보기, 한글본·병기본·용어집 받기가 가능하다. 진행 중 취소, 완료 후 삭제, 다시 번역도 된다.
 - **용어집 편집**: 완료된 작업에서 이 논문의 용어집을 열어 고치고 "저장 후 다시 번역"을 누르면, 바뀐 용어가 들어간 문단만 다시 번역된다.
 - 머리글에 최근 5시간 동안 ko-paper가 보낸 Claude 호출 수와 토큰이 보인다. 한도에 걸리면 경고가 뜨고 자동으로 재시도한다. 구독의 남은 한도 자체는 Claude가 공개하지 않아 표시할 수 없다.
-- 서버는 항상 127.0.0.1에만 열린다. 외부에 노출하지 않는다.
+- 서버는 항상 127.0.0.1에만 열린다. 외부에 노출하지 않는다. 브라우저에서 다른 사이트가 이 서버를 호출하는 것도 막는다(Host·Origin 검사).
 - 작업 기록은 `data/web_jobs.sqlite`, 파일은 `data/web/<작업 ID>/`에 남는다. 서버를 재시작하면 진행 중이던 작업은 실패로 표시된다.
 
 ## CLI

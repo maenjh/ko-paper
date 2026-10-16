@@ -18,7 +18,7 @@ _HEADING = re.compile(
     r"|Referencias|Bibliografía|Bibliografia|Riferimenti bibliografici|Referências|Referências bibliográficas"
     r"|Literatuur|Referenties|Литература|Список литературы)|参考文献)$"
 )
-_APPENDIX = re.compile(r"^(Appendix|APPENDIX|Supplementary|SUPPLEMENTARY)\b|^A(\.\d*)?\s+[A-Z][A-Za-z].{2,60}$")
+_APPENDIX = re.compile(r"^(Appendix|APPENDIX|Supplementary|SUPPLEMENTARY|Anhang|Annexe|Apéndice|Appendice|Apêndice|Bijlage|Приложение|付録|附录)\b|^A(\.\d*)?\s+[A-Z][A-Za-z].{2,60}$")
 _REF_LINE = re.compile(r"^\[\d+\]|\b(19|20)\d{2}[a-z]?\b")
 
 
@@ -139,6 +139,8 @@ def restore_references(src_pdf: Path, translated_pdf: Path) -> list[int]:
     src = pymupdf.open(src_pdf)
     out = pymupdf.open(translated_pdf)
     if src.page_count != out.page_count:
+        src.close()
+        out.close()
         return []
     regions = reference_regions(src)
     for pno, r in regions:

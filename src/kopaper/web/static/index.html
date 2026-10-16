@@ -246,7 +246,8 @@ function jobHTML(j){
     body = `<div class="jprog" style="margin-top:8px"><span>${j.queue_position ? `대기열 ${j.queue_position}번째` : "대기 중"}</span></div>`;
   }else if(j.status === "done" && r){
     const refs = r.restored_ref_pages?.length ? ` · 참고문헌 원본 유지(${r.restored_ref_pages.join(", ")}쪽)` : "";
-    const use = r.calls ? `호출 ${r.calls}회 · 토큰 ${((r.input_tokens+r.output_tokens)/1000).toFixed(0)}K` : "이전 번역 재사용";
+    const use = (r.calls ? `호출 ${r.calls}회 · 토큰 ${((r.input_tokens+r.output_tokens)/1000).toFixed(0)}K` : "이전 번역 재사용")
+      + (r.errors ? ` · 실패 ${r.errors}회` : "");
     body = `<div class="jprog" style="margin-top:8px"><span>${dur(r.seconds)} · ${use}${refs}</span></div>`;
   }
   const f = k => `/api/jobs/${j.id}/files/${k}`;

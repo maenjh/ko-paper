@@ -31,7 +31,7 @@ class TranslatorBackend(Protocol):
     async def complete(self, system: str, prompt: str, model: str) -> Completion: ...
 
 
-_LIMIT_RE = re.compile(r"limit|rate|quota|usage|overloaded|529", re.I)
+_LIMIT_RE = re.compile(r"rate.?limit|quota|usage limit|overloaded|\b(429|529)\b", re.I)
 
 
 class ClaudeCodeBackend:
@@ -150,6 +150,8 @@ class CodexBackend:
             "-c", f"model_instructions_file={json.dumps(self._instructions(system))}",
             "-c", f"model_reasoning_effort={json.dumps(self.effort or self.EFFORT.get(model, 'low'))}",
             "-c", 'web_search="disabled"',
+            # Paper text is untrusted: no shell, so a planted instruction can't read local files.
+            "-c", "features.shell_tool=false",
         ]
         if self.model:
             cmd += ["--model", self.model]
