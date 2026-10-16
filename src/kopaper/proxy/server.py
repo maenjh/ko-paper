@@ -13,10 +13,12 @@ import sqlite3
 import time
 import uuid
 
+from urllib.parse import urlsplit
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from ..config import BACKEND, DATA_DIR, PROXY_HOST, PROXY_PORT, SOURCE_LANGS
+from ..config import BACKEND, DATA_DIR, SOURCE_LANGS
 from .backends import BackendError, make_backend
 
 CACHE_DB = DATA_DIR / "proxy_cache.sqlite"
@@ -104,9 +106,22 @@ class Cache:
             con.execute("INSERT OR REPLACE INTO cache VALUES (?,?,?)", (k, v, time.time()))
 
 
+LOCAL_HOSTS = {"127.0.0.1", "localhost"}
+
+
 def create_app(backend_name: str = BACKEND) -> FastAPI:
     app = FastAPI()
     backend = make_backend(backend_name)
+
+    @app.middleware("http")
+    async def local_only(req: Request, call_next):
+        # Block other websites (CSRF) and DNS rebinding: only our own host names, only our own pages.
+        host = urlsplit("//" + req.headers.get("host", "")).hostname
+        origin = req.headers.get("origin")
+        if host not in LOCAL_HOSTS or (origin and urlsplit(origin).hostname not in LOCAL_HOSTS):
+            return JSONResponse({"error": {"message": "local requests only"}}, status_code=403)
+        return await call_next(req)
+
     cache = Cache(CACHE_DB)
     sem = asyncio.Semaphore(MAX_CONCURRENCY)
 
@@ -119,6 +134,7 @@ def create_app(backend_name: str = BACKEND) -> FastAPI:
     async def chat(req: Request):
         body = await req.json()
         model, source, review = parse_model(body.get("model") or "sonnet")
+        run = req.headers.get("authorization", "").removeprefix("Bearer ").strip() or None
         extra_sys, prompt = flatten_messages(body.get("messages", []))
         json_mode = (body.get("response_format") or {}).get("type") == "json_object"
         system = BASE_SYSTEM.format(source=source) + ("\n\n" + extra_sys if extra_sys else "") + (JSON_SUFFIX if json_mode else "")
@@ -133,7 +149,7 @@ def create_app(backend_name: str = BACKEND) -> FastAPI:
                 async with sem:
                     c = await backend.complete(system, prompt, model)
             except BackendError as e:
-                _log({"ts": t0, "model": model, "error": e.status, "msg": e.message[:200]})
+                _log({"ts": t0, "run": run, "model": model, "error": e.status, "msg": e.message[:200]})
                 # 429 makes BabelDOC's OpenAI client back off and retry.
                 return JSONResponse({"error": {"message": e.message, "type": "backend_error"}}, status_code=e.status)
             text, tin, tout = strip_fence(c.text), c.input_tokens, c.output_tokens
@@ -151,7 +167,7 @@ def create_app(backend_name: str = BACKEND) -> FastAPI:
                     pass  # keep the draft; the review is best-effort
             cache.put(key, text)
 
-        _log({"ts": t0, "ms": int((time.time() - t0) * 1000), "backend": backend.name, "model": model, "review": review,
+        _log({"ts": t0, "run": run, "ms": int((time.time() - t0) * 1000), "backend": backend.name, "model": model, "review": review,
               "cache_hit": hit, "json_mode": json_mode, "prompt_chars": len(prompt), "out_chars": len(text),
               "prompt_tokens": tin, "completion_tokens": tout})
         return JSONResponse({
@@ -167,11 +183,3 @@ def _log(row: dict) -> None:
     with USAGE_LOG.open("a") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-
-def main():
-    import uvicorn
-    uvicorn.run(create_app(), host=PROXY_HOST, port=PROXY_PORT)
-
-
-if __name__ == "__main__":
-    main()

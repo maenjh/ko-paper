@@ -50,7 +50,7 @@ def client(monkeypatch, tmp_path):
         monkeypatch.setattr(server, "make_backend", lambda name: fb)
         monkeypatch.setattr(server, "CACHE_DB", tmp_path / "c.sqlite")
         monkeypatch.setattr(server, "USAGE_LOG", tmp_path / "u.jsonl")
-        return TestClient(server.create_app("fake")), fb
+        return TestClient(server.create_app("fake"), base_url="http://127.0.0.1"), fb
     return make
 
 
@@ -156,3 +156,37 @@ def test_codex_backend_parses_events(tmp_path, monkeypatch):
     with pytest.raises(BackendError) as e:
         backends.parse_codex_events('{"type":"turn.failed","error":{"message":"usage limit reached"}}')
     assert e.value.status == 429
+
+
+def test_proxy_rejects_other_sites(client):
+    c, fb = client()
+    body = {"messages": [{"role": "user", "content": "x"}]}
+    assert c.post("/v1/chat/completions", json=body, headers={"Origin": "https://evil.example"}).status_code == 403
+    assert c.post("http://evil.example/v1/chat/completions", json=body).status_code == 403  # DNS rebinding
+    assert c.post("/v1/chat/completions", json=body, headers={"Origin": "http://localhost:8787"}).status_code == 200
+    assert fb.calls == 1
+
+
+def test_usage_counts_only_this_run(client, monkeypatch, tmp_path):
+    from kopaper import pipeline
+
+    c, _ = client()
+    monkeypatch.setattr(pipeline, "DATA_DIR", tmp_path)
+    tmp_path.joinpath("proxy_usage.jsonl").unlink(missing_ok=True)
+    monkeypatch.setattr(server, "USAGE_LOG", tmp_path / "proxy_usage.jsonl")
+    for key, text in (("kopaper-a-1", "one"), ("kopaper-b-2", "two"), ("kopaper-a-1", "three")):
+        c.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": text}]},
+               headers={"Authorization": f"Bearer {key}"})
+    assert pipeline.usage_since(0, "kopaper-a-1")["calls"] == 2
+    assert pipeline.usage_since(0)["calls"] == 3
+
+
+def test_limit_regex_and_foreign_appendix():
+    from kopaper.postprocess import _APPENDIX
+    from kopaper.proxy.backends import _LIMIT_RE
+
+    assert _LIMIT_RE.search("Rate limit exceeded") and _LIMIT_RE.search("usage limit reached") and _LIMIT_RE.search("HTTP 529")
+    for msg in ("failed to generate a response", "could not separate", "context limit exceeded"):
+        assert not _LIMIT_RE.search(msg), msg
+    for h in ("Appendix A", "Anhang A: Beweise", "Annexe A", "Apéndice A", "付録 A", "Приложение А"):
+        assert _APPENDIX.match(h), h

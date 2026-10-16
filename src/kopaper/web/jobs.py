@@ -154,7 +154,16 @@ class JobManager:
         self._run(row["id"])
         return True
 
+    def _claim(self, job_id: str) -> bool:
+        """queued → running in one statement, so a cancel that just landed wins."""
+        with self._lock, self._db() as con:
+            cur = con.execute("UPDATE jobs SET status='running', stage='준비 중', started=? WHERE id=? AND status='queued'",
+                              (str(time.time()), job_id))
+            return cur.rowcount == 1
+
     def _run(self, job_id: str) -> None:
+        if not self._claim(job_id):
+            return
         job = self.get(job_id)
         d = self.work_dir / job_id
         o = job["options"]
@@ -171,7 +180,6 @@ class JobManager:
             review=bool(o.get("review")),
         )
         cancel = self._cancel[job_id] = threading.Event()
-        self._update(job_id, status="running", stage="준비 중", started=str(time.time()))
         last = [0.0]
 
         def progress(stage: str, pct: float) -> None:
@@ -182,11 +190,15 @@ class JobManager:
 
         try:
             res = self.translate(d / job["name"], d / "out", opts, on_progress=progress, cancel=cancel)
-            ok = res.returncode == 0 and (res.mono_pdf or res.dual_pdf)
+            # BabelDOC exits 0 even when every call failed; then the PDF is still untranslated.
+            all_failed = res.errors and not res.calls
+            ok = res.returncode == 0 and (res.mono_pdf or res.dual_pdf) and not all_failed
+            error = (f"번역 호출 {res.errors}회가 모두 실패했습니다. 로그인 상태를 확인하세요. 로그: {res.job_dir}"
+                     if all_failed else f"BabelDOC 종료 코드 {res.returncode}. 로그: {res.job_dir}/babeldoc.log")
             self._update(job_id, status="done" if ok else "failed", stage="완료" if ok else "실패",
                          progress="100" if ok else f"{self._live.get(job_id, ('', 0))[1]:.1f}",
                          result=json.dumps(asdict(res), default=str, ensure_ascii=False),
-                         error=None if ok else f"BabelDOC 종료 코드 {res.returncode}. 로그: {res.job_dir}/babeldoc.log",
+                         error=None if ok else error,
                          finished=str(time.time()))
         except pipeline.Cancelled:
             self._update(job_id, status="cancelled", stage="취소됨", finished=str(time.time()))

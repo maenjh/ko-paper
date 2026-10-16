@@ -9,7 +9,7 @@
 babeldoc 0.5.24 --openai --openai-base-url http://127.0.0.1:8787/v1 --openai-model sonnet
       │
       ▼
-kopaper-proxy (src/kopaper/proxy/server.py, FastAPI)
+kopaper serve --proxy-only (src/kopaper/proxy/server.py, FastAPI)
       │  claude -p --output-format json --model sonnet --system-prompt <번역용>
       │           --tools "" --strict-mcp-config --setting-sources "" --no-session-persistence
       ▼
@@ -19,7 +19,7 @@ Claude Code 2.1.290 (구독 로그인)
 실행 방법:
 
 ```bash
-uv sync && .venv/bin/kopaper-proxy        # 127.0.0.1:8787
+uv sync && .venv/bin/kopaper serve --proxy-only   # 127.0.0.1:8787
 babeldoc --files paper.pdf --lang-in en --lang-out ko \
   --openai --openai-base-url http://127.0.0.1:8787/v1 --openai-api-key dummy --openai-model sonnet \
   --qps 4 --pool-max-workers 4 --no-watermark --save-auto-extracted-glossary --output out/

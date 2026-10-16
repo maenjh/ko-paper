@@ -295,7 +295,7 @@ wheels = [
 
 [[package]]
 name = "kopaper"
-version = "0.0.1"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
@@ -312,7 +312,6 @@ api = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "pytest" },
 ]
 
@@ -328,10 +327,7 @@ requires-dist = [
 provides-extras = ["api"]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pytest", specifier = ">=8" },
-]
+dev = [{ name = "pytest", specifier = ">=8" }]
 
 [[package]]
 name = "opentelemetry-api"

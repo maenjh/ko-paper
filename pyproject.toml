@@ -1,6 +1,6 @@
 [project]
 name = "kopaper"
-version = "0.3.0"
+version = "0.4.0"
 description = "Layout-preserving English→Korean paper PDF translator backed by Claude"
 requires-python = ">=3.12"
 license = "AGPL-3.0-or-later"
@@ -18,12 +18,10 @@ api = ["anthropic>=0.70"]
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1",
     "pytest>=8",
 ]
 
 [project.scripts]
-kopaper-proxy = "kopaper.proxy.server:main"
 kopaper = "kopaper.cli:main"
 
 [build-system]

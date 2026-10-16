@@ -22,7 +22,7 @@ def fake_translate(src, out_dir, opts, on_progress=None, cancel=None):
 def make(tmp_path, translate=fake_translate):
     mgr = JobManager(db_path=tmp_path / "j.sqlite", work_dir=tmp_path / "web", translate=translate)
     app = webapp.create_web_app(mgr, start_worker=False, backend="claude-code")
-    return TestClient(app), mgr
+    return TestClient(app, base_url="http://127.0.0.1"), mgr
 
 
 def test_upload_run_download(tmp_path, monkeypatch):
@@ -120,3 +120,28 @@ def test_build_glossary_priority(tmp_path, monkeypatch):
     path, reuse = pipeline.build_glossary("abc", opts, tmp_path / "g.csv")
     rows = {r["source"]: r["target"] for r in gl.read(path)}
     assert rows["trust"] == "신뢰감" and "actor" not in rows  # user edit beats domain, replaces auto
+
+
+def test_all_calls_failed_marks_job_failed(tmp_path, monkeypatch):
+    monkeypatch.setattr("kopaper.proxy.server.make_backend", lambda name: object())
+
+    def failed(src, out_dir, opts, on_progress=None, cancel=None):
+        res = fake_translate(src, out_dir, opts, on_progress, cancel)
+        res.calls, res.errors = 0, 7
+        return res
+
+    c, mgr = make(tmp_path, translate=failed)
+    jid = c.post("/api/jobs", files={"file": ("p.pdf", b"%PDF-1.7 x", "application/pdf")}).json()["id"]
+    assert mgr.run_next()
+    job = c.get(f"/api/jobs/{jid}").json()
+    assert job["status"] == "failed" and "7회" in job["error"]
+
+
+def test_cancelled_job_is_not_started(tmp_path, monkeypatch):
+    monkeypatch.setattr("kopaper.proxy.server.make_backend", lambda name: object())
+    ran = []
+    c, mgr = make(tmp_path, translate=lambda *a, **k: ran.append(1))
+    jid = c.post("/api/jobs", files={"file": ("p.pdf", b"%PDF-1.7 x", "application/pdf")}).json()["id"]
+    mgr.cancel(jid)
+    mgr._run(jid)  # the worker picked the row just before the cancel landed
+    assert not ran and c.get(f"/api/jobs/{jid}").json()["status"] == "cancelled"

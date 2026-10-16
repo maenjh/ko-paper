@@ -88,6 +88,11 @@ def babeldoc_entry(math_font_fix: bool) -> list[str]:
     """Plain `babeldoc`, or BabelDOC's interpreter + our launcher that patches math-font detection."""
     exe = shutil.which(BABELDOC_BIN) or BABELDOC_BIN
     if math_font_fix:
+        # uv tools: ~/.local/bin/babeldoc links into the tool venv, whose bin/ holds its python.
+        # Works even when the shebang is a /bin/sh trampoline (paths with spaces).
+        py = Path(exe).resolve().with_name("python")
+        if py.exists():
+            return [str(py), str(Path(__file__).with_name("babeldoc_launcher.py"))]
         try:
             first = Path(exe).read_text(errors="ignore").splitlines()[0]
         except (OSError, IndexError):
@@ -116,7 +121,7 @@ def proxy_model(opts: Options) -> str:
 def babeldoc_cmd(src: Path, job_dir: Path, opts: Options, glossary_file: Path | None, reuse: bool) -> list[str]:
     cmd = [
         *babeldoc_entry(opts.math_font_fix), "--files", str(src), "--lang-in", opts.lang_in, "--lang-out", "ko",
-        "--openai", "--openai-base-url", opts.proxy_url, "--openai-api-key", "kopaper-local",
+        "--openai", "--openai-base-url", opts.proxy_url, "--openai-api-key", run_tag(job_dir),
         "--openai-model", proxy_model(opts),
         "--custom-system-prompt", system_prompt(opts.lang_in),
         "--min-text-length", str(opts.min_text_length),
@@ -141,7 +146,12 @@ def babeldoc_cmd(src: Path, job_dir: Path, opts: Options, glossary_file: Path | 
     return cmd
 
 
-def usage_since(t0: float) -> dict:
+def run_tag(job_dir: Path) -> str:
+    """Sent as BabelDOC's API key; the proxy logs it so usage counts only this run's calls."""
+    return f"kopaper-{job_dir.parent.name}-{job_dir.name}"
+
+
+def usage_since(t0: float, run: str | None = None) -> dict:
     log = DATA_DIR / "proxy_usage.jsonl"
     rows = []
     if log.exists():
@@ -150,7 +160,7 @@ def usage_since(t0: float) -> dict:
                 r = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if r.get("ts", 0) >= t0:
+            if r.get("ts", 0) >= t0 and (run is None or r.get("run") in (None, run)):
                 rows.append(r)
     ok = [r for r in rows if "error" not in r]
     return {
@@ -304,6 +314,6 @@ def translate_pdf(src: Path, out_dir: Path | None = None, opts: Options | None =
     elif reuse:
         saved = glossary.user_path(pid) if glossary.user_path(pid).exists() else glossary.paper_path(pid)
 
-    res = Result(pid, job_dir, mono, dual, saved, restored, ocr_applied, round(seconds, 1), returncode=rc, **usage_since(t0))
+    res = Result(pid, job_dir, mono, dual, saved, restored, ocr_applied, round(seconds, 1), returncode=rc, **usage_since(t0, run_tag(job_dir)))
     (job_dir / "result.json").write_text(json.dumps(asdict(res), default=str, ensure_ascii=False, indent=1))
     return res
