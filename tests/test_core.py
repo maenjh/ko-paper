@@ -138,6 +138,7 @@ def test_source_language_prompts():
     assert not _HEADING.match("references to prior work")
 
 
+@pytest.mark.skipif(__import__("os").name == "nt", reason="the fake codex is a /bin/sh script")
 def test_codex_backend_parses_events(tmp_path, monkeypatch):
     from kopaper.proxy import backends
 
@@ -190,3 +191,25 @@ def test_limit_regex_and_foreign_appendix():
         assert not _LIMIT_RE.search(msg), msg
     for h in ("Appendix A", "Anhang A: Beweise", "Annexe A", "Apéndice A", "付録 A", "Приложение А"):
         assert _APPENDIX.match(h), h
+
+
+def test_echo_backend_answers_babeldoc_formats():
+    from kopaper.proxy.backends import ECHO_MARK, echo_answer
+
+    example = '[{"id": 0, "input": "example"}]'
+    batch = 'Example:\n' + example + '\nInput:\n' + json.dumps([{"id": 0, "input": "Hello {v1}"}, {"id": 1, "input": "World"}])
+    assert json.loads(echo_answer(batch)) == [{"id": 0, "output": ECHO_MARK + "Hello {v1}"}, {"id": 1, "output": ECHO_MARK + "World"}]
+    assert echo_answer("translate it into ko. Input:\n\nSome text") == ECHO_MARK + "Some text"
+    assert echo_answer("Rules...\n\nNow translate the following text:\n\nA paragraph.") == ECHO_MARK + "A paragraph."
+    assert echo_answer("You are an expert multilingual terminologist. Extract key terms...") == "[]"
+
+
+def test_progress_bar_lines_unicode_and_ascii():
+    from kopaper.pipeline import _BAR
+
+    for line in ("Translate Paragraphs (1/1)          ━━━━━╸━━━━━ 20/54   0:00:12 0:00:30",
+                 "Translate Paragraphs (1/1)          -----------  20/54   0:00:12 0:00:30",  # Windows
+                 "translate                           -- ---------- 33/100 0:00:12 0:00:30"):
+        m = _BAR.match(line)
+        assert m and m["name"].strip() in ("Translate Paragraphs (1/1)", "translate"), line
+        assert (int(m["done"]), int(m["total"])) in ((20, 54), (33, 100))

@@ -178,7 +178,8 @@ def usage_since(t0: float, run: str | None = None) -> dict:
 
 # BabelDOC's rich progress output: "<stage> (i/n)  ━━━╺━━  done/total  elapsed eta"
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
-_BAR = re.compile(r"^(?P<name>.+?)\s+[━╸╺─\s]+\s(?P<done>\d+)/(?P<total>\d+)\b")
+# rich draws ━╸╺ bars, or plain "-" on Windows consoles without Unicode box drawing.
+_BAR = re.compile(r"^(?P<name>.+?)\s+[━╸╺─\-\s]+\s(?P<done>\d+)/(?P<total>\d+)\b")
 
 # (stage, overall percent 0-100)
 ProgressFn = Callable[[str, float], None]

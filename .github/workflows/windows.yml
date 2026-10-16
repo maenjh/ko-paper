@@ -1,0 +1,112 @@
+# Windows check: install.ps1 under Windows PowerShell 5.1, the cmd launcher, a real BabelDOC run
+# with the offline `echo` backend (no login), lite-mode helpers with Edge, and the test suite.
+# Smart App Control can't be tested here (runners are Windows Server).
+name: windows
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      KOPAPER_BACKEND: echo
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install with install.ps1 (Windows PowerShell 5.1, via iex like users do)
+        shell: powershell
+        run: |
+          git branch -f ci-under-test HEAD
+          # A folder with a space and Korean letters, built from code points to keep this file ASCII.
+          $ko = -join [char[]](0xD55C, 0xAE00)
+          $src = Join-Path $env:RUNNER_TEMP "ko paper $ko\src"
+          "KOPAPER_SRC=$src" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          "$env:USERPROFILE\.local\bin" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          $env:KOPAPER_REPO = $env:GITHUB_WORKSPACE
+          $env:KOPAPER_REF = 'ci-under-test'
+          $env:KOPAPER_SRC = $src
+          Get-Content -Raw install.ps1 | Invoke-Expression
+
+      - name: doctor through the cmd launcher
+        shell: cmd
+        run: |
+          call ko-paper doctor > doctor.txt 2>&1
+          type doctor.txt
+          findstr /C:"kopaper ready" doctor.txt
+
+      - name: Translate a PDF in a folder with spaces and Korean letters (echo backend)
+        shell: powershell
+        run: |
+          $ko = -join [char[]](0xB17C, 0xBB38)
+          $dir = Join-Path $env:RUNNER_TEMP "paper $ko"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item docs\sample\sample-paper.pdf (Join-Path $dir 'sample.pdf')
+          ko-paper translate (Join-Path $dir 'sample.pdf') --mono-only
+          if ($LASTEXITCODE -ne 0) { throw "translate failed ($LASTEXITCODE)" }
+          $out = Join-Path $dir 'sample.ko.pdf'
+          # ASCII only here: Windows PowerShell 5.1 reads this step's script without a BOM and mangles Korean.
+          $check = @'
+          import sys, pymupdf
+          mark = chr(0xBC88) + chr(0xC5ED)  # the echo backend's Korean marker
+          text = pymupdf.open(sys.argv[1])[0].get_text()
+          n, stray = text.count(mark), text.count("[]")
+          print("markers:", n, "stray []:", stray)
+          assert n >= 10 and stray == 0, ascii(text[:300])
+          '@
+          $check | Out-File -Encoding ascii check_output.py
+          & "$env:KOPAPER_SRC\.venv\Scripts\python.exe" check_output.py $out
+          if ($LASTEXITCODE -ne 0) { throw 'translated text not found in the output PDF' }
+
+      - name: Progress parsing through the pipe reader (what the web UI uses)
+        shell: powershell
+        run: |
+          $py = "$env:KOPAPER_SRC\.venv\Scripts\python.exe"
+          $code = @'
+          import sys
+          from pathlib import Path
+          from kopaper.cli import ensure_proxy
+          from kopaper.pipeline import Options, translate_pdf
+          ensure_proxy()
+          seen = []
+          r = translate_pdf(Path(sys.argv[1]), Path(sys.argv[2]), Options(mono=True, dual=False, ignore_cache=True),
+                            on_progress=lambda stage, pct: seen.append(stage))
+          stages = sorted(set(seen))
+          print(r.returncode, len(seen), stages)
+          assert r.returncode == 0 and r.mono_pdf and "Translate Paragraphs" in seen, stages
+          '@
+          $code | Out-File -Encoding utf8 progress_check.py
+          & $py progress_check.py docs\sample\sample-paper.pdf $env:RUNNER_TEMP\progress-out
+          if ($LASTEXITCODE -ne 0) { throw 'progress check failed' }
+
+      - name: Lite mode helpers (pypdf extraction, Edge print to PDF)
+        shell: powershell
+        run: |
+          # To a file first: cutting the pipe short (Select-Object -First) would fail the python process.
+          uv run --no-project --with pypdf python skills\ko-paper\scripts\extract_text.py docs\sample\sample-paper.pdf --pages 1 > extracted.txt
+          if ($LASTEXITCODE -ne 0) { throw 'extract_text failed' }
+          Get-Content extracted.txt -TotalCount 5
+          if (-not (Select-String -Path extracted.txt -Pattern 'Calibrated Reliance' -Quiet)) { throw 'extracted text is missing' }
+          $ko = -join [char[]](0xD55C, 0xAE00)
+          $dir = Join-Path $env:RUNNER_TEMP "lite $ko"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $html = (Get-Content -Raw -Encoding UTF8 skills\ko-paper\scripts\lite_template.html).Replace('<!-- CONTENT -->', "<h1>$ko</h1><p>$ko</p>")
+          [IO.File]::WriteAllText((Join-Path $dir 't.ko.lite.html'), $html, (New-Object Text.UTF8Encoding $false))
+          powershell -NoProfile -ExecutionPolicy Bypass -File skills\ko-paper\scripts\html2pdf.ps1 (Join-Path $dir 't.ko.lite.html') (Join-Path $dir 't.ko.lite.pdf')
+          if ($LASTEXITCODE -ne 0) { throw 'html2pdf.ps1 failed' }
+
+      - name: Git Bash wrapper (how Claude Code on Windows runs the skill)
+        shell: bash
+        run: |
+          KOPAPER_HOME="$(cygpath -u "$KOPAPER_SRC")" bash skills/ko-paper/scripts/kopaper.sh doctor
+
+      - name: Tests
+        shell: powershell
+        run: |
+          uv run --frozen pytest -q
+          if ($LASTEXITCODE -ne 0) { throw 'tests failed' }

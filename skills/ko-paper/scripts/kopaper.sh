@@ -39,6 +39,13 @@ export KOPAPER_BACKEND="${KOPAPER_BACKEND:-}"
 venv_python() {  # Scripts\python.exe under Git Bash on Windows
   if [ -f "$ROOT/.venv/Scripts/python.exe" ]; then echo "$ROOT/.venv/Scripts/python.exe"; else echo "$ROOT/.venv/bin/python"; fi
 }
+# The BabelDOC release ko-paper's layout fixes are written against. bitstring 5 dropped BitStream,
+# which BabelDOC imports, so a fresh install without the cap fails to start.
+BABELDOC_VERSION="0.5.24"
+babeldoc_current() {
+  [ -n "${KOPAPER_BABELDOC_BIN:-}" ] || uv tool list 2>/dev/null | grep -q "^babeldoc v$BABELDOC_VERSION"
+}
+
 babeldoc_python() {
   local d; d="$(uv tool dir 2>/dev/null)"
   if need cygpath; then d="$(cygpath -u "$d")"; fi
@@ -51,7 +58,7 @@ setup() {
     echo "✗ uv is missing: curl -LsSf https://astral.sh/uv/install.sh | sh" >&2; ok=0
   fi
   case "${KOPAPER_BACKEND:-}" in
-    claude-code|codex|anthropic-api) ;;
+    claude-code|codex|anthropic-api|echo) ;;  # echo: CI only, does not translate
     "") echo "✗ neither Claude Code (claude) nor Codex (codex) is installed; install and log in to one" >&2; ok=0 ;;
     *) echo "✗ unknown KOPAPER_BACKEND=$KOPAPER_BACKEND (claude-code, codex, anthropic-api)" >&2; ok=0 ;;
   esac
@@ -62,11 +69,11 @@ setup() {
     echo "✗ KOPAPER_BACKEND=codex but the codex CLI is missing" >&2; ok=0
   fi
   [ "$ok" = 1 ] || exit 1
-  if ! need babeldoc && [ -z "${KOPAPER_BABELDOC_BIN:-}" ]; then
-    echo "→ installing BabelDOC (uv tool install babeldoc)" >&2
+  if ! babeldoc_current; then
+    echo "→ installing BabelDOC $BABELDOC_VERSION (uv tool install)" >&2
     # 3.12: the most common build of every compiled dependency, so the best reputation with
     # Windows Smart App Control. BabelDOC doesn't support 3.14 anyway.
-    uv tool install --python 3.12 babeldoc >&2
+    uv tool install --force --python 3.12 "babeldoc==$BABELDOC_VERSION" --with "bitstring<5" >&2
   fi
   # Always sync: after an update the editable install has new code but maybe not its new dependencies.
   # --inexact keeps the optional `api` extra if someone installed it.
@@ -129,7 +136,7 @@ if [ "${1:-}" = "doctor" ]; then
   exit 0
 fi
 
-[ -x "$(venv_python)" ] && need babeldoc || setup
+[ -x "$(venv_python)" ] && babeldoc_current || setup
 [ $# -gt 0 ] || set -- serve --open
 # python -m, not the venv's kopaper.exe: that file is generated per install, so Smart App Control
 # never knows it.
