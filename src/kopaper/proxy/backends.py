@@ -218,9 +218,13 @@ def echo_answer(prompt: str) -> str:
             batch = items
     if batch is not None:
         return json.dumps([{"id": i["id"], "output": ECHO_MARK + str(i["input"])} for i in batch], ensure_ascii=False)
-    if "Input:" in prompt:  # single-paragraph fallback: "... Input:\n\n<text>"
-        return ECHO_MARK + prompt.rsplit("Input:", 1)[1].strip()
-    return "[]"  # term extraction: no terms
+    if "terminologist" in prompt or '"tgt"' in prompt:  # term extraction: no terms
+        return "[]"
+    # Single paragraph: the text follows "Input:" or "Now translate the following text:", else it is the last block.
+    for marker in ("Now translate the following text:", "Input:"):
+        if marker in prompt:
+            return ECHO_MARK + prompt.rsplit(marker, 1)[1].strip()
+    return ECHO_MARK + prompt.strip().rsplit("\n\n", 1)[-1].strip()
 
 
 def make_backend(name: str) -> TranslatorBackend:

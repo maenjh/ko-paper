@@ -200,4 +200,5 @@ def test_echo_backend_answers_babeldoc_formats():
     batch = 'Example:\n' + example + '\nInput:\n' + json.dumps([{"id": 0, "input": "Hello {v1}"}, {"id": 1, "input": "World"}])
     assert json.loads(echo_answer(batch)) == [{"id": 0, "output": ECHO_MARK + "Hello {v1}"}, {"id": 1, "output": ECHO_MARK + "World"}]
     assert echo_answer("translate it into ko. Input:\n\nSome text") == ECHO_MARK + "Some text"
-    assert echo_answer("extract terms from this page") == "[]"
+    assert echo_answer("Rules...\n\nNow translate the following text:\n\nA paragraph.") == ECHO_MARK + "A paragraph."
+    assert echo_answer("You are an expert multilingual terminologist. Extract key terms...") == "[]"

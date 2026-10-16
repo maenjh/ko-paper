@@ -50,7 +50,17 @@ jobs:
           ko-paper translate (Join-Path $dir 'sample.pdf') --mono-only
           if ($LASTEXITCODE -ne 0) { throw "translate failed ($LASTEXITCODE)" }
           $out = Join-Path $dir 'sample.ko.pdf'
-          & "$env:KOPAPER_SRC\.venv\Scripts\python.exe" -c "import pymupdf, sys; t = pymupdf.open(sys.argv[1])[0].get_text(); assert '번역' in t, t[:300]; print('marker found')" $out
+          # ASCII only here: Windows PowerShell 5.1 reads this step's script without a BOM and mangles Korean.
+          $check = @'
+          import sys, pymupdf
+          mark = chr(0xBC88) + chr(0xC5ED)  # the echo backend's Korean marker
+          text = pymupdf.open(sys.argv[1])[0].get_text()
+          n, stray = text.count(mark), text.count("[]")
+          print("markers:", n, "stray []:", stray)
+          assert n >= 10 and stray == 0, ascii(text[:300])
+          '@
+          $check | Out-File -Encoding ascii check_output.py
+          & "$env:KOPAPER_SRC\.venv\Scripts\python.exe" check_output.py $out
           if ($LASTEXITCODE -ne 0) { throw 'translated text not found in the output PDF' }
 
       - name: Progress parsing through the pipe reader (what the web UI uses)
