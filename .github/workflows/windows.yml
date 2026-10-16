@@ -87,8 +87,11 @@ jobs:
       - name: Lite mode helpers (pypdf extraction, Edge print to PDF)
         shell: powershell
         run: |
-          uv run --no-project --with pypdf python skills\ko-paper\scripts\extract_text.py docs\sample\sample-paper.pdf --pages 1 | Select-Object -First 5
+          # To a file first: cutting the pipe short (Select-Object -First) would fail the python process.
+          uv run --no-project --with pypdf python skills\ko-paper\scripts\extract_text.py docs\sample\sample-paper.pdf --pages 1 > extracted.txt
           if ($LASTEXITCODE -ne 0) { throw 'extract_text failed' }
+          Get-Content extracted.txt -TotalCount 5
+          if (-not (Select-String -Path extracted.txt -Pattern 'Calibrated Reliance' -Quiet)) { throw 'extracted text is missing' }
           $ko = -join [char[]](0xD55C, 0xAE00)
           $dir = Join-Path $env:RUNNER_TEMP "lite $ko"
           New-Item -ItemType Directory -Force $dir | Out-Null
