@@ -45,6 +45,11 @@ function Install-KoPaper {
         Write-Host '-> installing Codex CLI'
         Run 'Codex install' { npm install -g '@openai/codex' }
     }
+    # Remember the subscription the user installed for, so later runs don't switch to another CLI.
+    if ($env:KOPAPER_WITH -in @('claude-code', 'codex')) {
+        New-Item -ItemType Directory -Force (Join-Path $HOME '.ko-paper') | Out-Null
+        [IO.File]::WriteAllText((Join-Path $HOME '.ko-paper\backend'), $env:KOPAPER_WITH)
+    }
 
     if (Test-Path (Join-Path $Src '.git')) {
         Write-Host "-> updating $Src"

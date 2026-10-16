@@ -20,15 +20,30 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 # Keep caches and glossaries outside the checkout so plugin updates don't wipe them.
 export KOPAPER_DATA="${KOPAPER_DATA:-$HOME/.ko-paper/data}"
+export PYTHONUTF8=1  # localized (e.g. Korean) Windows error text comes through readable
 
 need() { command -v "$1" >/dev/null 2>&1; }
 
-# Backend: Claude Code if it is installed, otherwise Codex. KOPAPER_BACKEND overrides.
+# Backend: $KOPAPER_BACKEND, else the one picked at install (~/.ko-paper/backend),
+# else Claude Code when it is the only CLI or is logged in, else Codex.
+BACKEND_FILE="$HOME/.ko-paper/backend"
+if [ -z "${KOPAPER_BACKEND:-}" ] && [ -s "$BACKEND_FILE" ]; then KOPAPER_BACKEND="$(cat "$BACKEND_FILE")"; fi
 if [ -z "${KOPAPER_BACKEND:-}" ]; then
-  if need claude; then export KOPAPER_BACKEND=claude-code
-  elif need codex; then export KOPAPER_BACKEND=codex
+  if need claude && { ! need codex || [ -n "${ANTHROPIC_API_KEY:-}" ] || claude auth status >/dev/null 2>&1; }; then
+    KOPAPER_BACKEND=claude-code
+  elif need codex; then KOPAPER_BACKEND=codex
   fi
 fi
+export KOPAPER_BACKEND="${KOPAPER_BACKEND:-}"
+
+venv_python() {  # Scripts\python.exe under Git Bash on Windows
+  if [ -f "$ROOT/.venv/Scripts/python.exe" ]; then echo "$ROOT/.venv/Scripts/python.exe"; else echo "$ROOT/.venv/bin/python"; fi
+}
+babeldoc_python() {
+  local d; d="$(uv tool dir 2>/dev/null)"
+  if need cygpath; then d="$(cygpath -u "$d")"; fi
+  if [ -f "$d/babeldoc/Scripts/python.exe" ]; then echo "$d/babeldoc/Scripts/python.exe"; else echo "$d/babeldoc/bin/python"; fi
+}
 
 setup() {
   local ok=1
@@ -49,7 +64,9 @@ setup() {
   [ "$ok" = 1 ] || exit 1
   if ! need babeldoc && [ -z "${KOPAPER_BABELDOC_BIN:-}" ]; then
     echo "→ installing BabelDOC (uv tool install babeldoc)" >&2
-    uv tool install babeldoc >&2
+    # 3.12: the most common build of every compiled dependency, so the best reputation with
+    # Windows Smart App Control. BabelDOC doesn't support 3.14 anyway.
+    uv tool install --python 3.12 babeldoc >&2
   fi
   # Always sync: after an update the editable install has new code but maybe not its new dependencies.
   # --inexact keeps the optional `api` extra if someone installed it.
@@ -75,8 +92,29 @@ logged_in() {
   esac
 }
 
+native_fail() {  # $1 = which environment, $2 = python's output
+  echo "✗ $1 could not load its compiled modules:" >&2
+  printf '%s\n' "$2" | grep -iE "error" | head -3 | sed 's/^/    /' >&2
+  if printf '%s' "$2" | grep -qiE "4551|application control|애플리케이션 제어"; then
+    echo "  Windows Smart App Control blocked an unsigned file. Don't turn it off:" >&2
+    echo "  see https://github.com/maenjh/ko-paper#windows-smart-app-control" >&2
+  fi
+  exit 1
+}
+
+# Import the compiled modules once: Smart App Control blocks unsigned ones only when they load.
+native_check() {
+  local out
+  out="$("$(venv_python)" -c "import pymupdf" 2>&1)" || native_fail "ko-paper" "$out"
+  if [ -z "${KOPAPER_BABELDOC_BIN:-}" ]; then
+    out="$("$(babeldoc_python)" -c "import pymupdf, onnxruntime, cv2, numpy, babeldoc.format.pdf.high_level" 2>&1)" \
+      || native_fail "BabelDOC" "$out"
+  fi
+}
+
 if [ "${1:-}" = "doctor" ]; then
   setup
+  native_check
   if ! logged_in; then
     case "$KOPAPER_BACKEND" in
       claude-code) echo "✗ Claude Code is installed but not logged in. Run: claude auth login" >&2 ;;
@@ -90,9 +128,8 @@ if [ "${1:-}" = "doctor" ]; then
   exit 0
 fi
 
-kp() {  # the venv's kopaper; Scripts/kopaper.exe under Git Bash on Windows
-  if [ -f "$ROOT/.venv/Scripts/kopaper.exe" ]; then echo "$ROOT/.venv/Scripts/kopaper.exe"; else echo "$ROOT/.venv/bin/kopaper"; fi
-}
-[ -x "$(kp)" ] && need babeldoc || setup
+[ -x "$(venv_python)" ] && need babeldoc || setup
 [ $# -gt 0 ] || set -- serve --open
-exec "$(kp)" "$@"
+# python -m, not the venv's kopaper.exe: that file is generated per install, so Smart App Control
+# never knows it.
+exec "$(venv_python)" -m kopaper "$@"

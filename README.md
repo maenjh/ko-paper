@@ -133,6 +133,37 @@ ko-paper translate ~/Downloads/paper.pdf   # 터미널에서 바로 번역
 결과는 입력 파일 옆에 `<이름>.ko.pdf`(한글본)와 `<이름>.ko.dual.pdf`(원문 병기본)로 생긴다.
 스킬로 실행할 때 캐시·용어집·작업 로그는 `~/.ko-paper/data`에 쌓인다.
 
+## Windows Smart App Control
+
+Windows 11의 **Smart App Control**(SAC)은 서명이 없고 평판이 쌓이지 않은 프로그램 파일을 불러오는 순간
+막는다. ko-paper와 BabelDOC은 PyMuPDF·onnxruntime·OpenCV 같은 컴파일된 Python 모듈(`.pyd`, `.dll`)을
+쓰는데, 이 파일들은 대부분 서명이 없다. 그래서 SAC가 켜진 PC에서는 번역 중에 이런 오류가 날 수 있다.
+
+```text
+ImportError: DLL load failed while importing _mupdf: 애플리케이션 제어 정책에서 이 파일을 차단했습니다.
+```
+
+ko-paper가 줄이려고 하는 것:
+
+- `ko-paper doctor`가 컴파일된 모듈을 실제로 불러와 본다. 막히면 `kopaper ready` 대신 차단 사실을 알린다.
+- Python 3.12로 고정한다. 가장 널리 쓰이는 빌드라 SAC의 평판 판정을 받을 가능성이 가장 높다.
+- 설치마다 새로 생기는 `kopaper.exe` 대신 `python -m kopaper`로 실행한다.
+
+그래도 막히면 보안 기능인 **SAC를 끄지 말고** WSL 안에서 쓴다. WSL의 Linux 프로그램에는
+SAC가 적용되지 않는다.
+
+```powershell
+wsl --install          # 관리자 PowerShell, 끝나면 재부팅
+```
+
+재부팅 후 시작 메뉴의 **Ubuntu**에서 macOS·Linux용 설치 명령을 실행한다.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/maenjh/ko-paper/main/install.sh | bash -s -- --with-codex   # Claude면 --with-claude-code
+ko-paper        # Windows 브라우저에서 http://127.0.0.1:8787 이 열리지 않으면 직접 연다
+ko-paper translate /mnt/c/Users/<이름>/Downloads/paper.pdf
+```
+
 ## 직접 설치 (CLI·웹 UI)
 
 - Claude Code 로그인 (`claude` 실행 후 `/login`)
