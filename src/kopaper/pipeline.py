@@ -4,8 +4,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import queue
 import re
-import select
 import shutil
 import subprocess
 import threading
@@ -91,6 +91,10 @@ def babeldoc_entry(math_font_fix: bool) -> list[str]:
         # uv tools: ~/.local/bin/babeldoc links into the tool venv, whose bin/ holds its python.
         # Works even when the shebang is a /bin/sh trampoline (paths with spaces).
         py = Path(exe).resolve().with_name("python")
+        if os.name == "nt":  # babeldoc.exe is a trampoline, not a link; the tool venv lives under `uv tool dir`
+            tool_dir = subprocess.run(["uv", "tool", "dir"], capture_output=True, text=True).stdout.strip() \
+                if shutil.which("uv") else ""
+            py = Path(tool_dir or ".", "babeldoc", "Scripts", "python.exe")
         if py.exists():
             return [str(py), str(Path(__file__).with_name("babeldoc_launcher.py"))]
         try:
@@ -186,15 +190,21 @@ class Cancelled(Exception):
 
 def run_with_progress(cmd: list[str], log_path: Path, on_progress: ProgressFn,
                       cancel: threading.Event | None = None, env: dict | None = None) -> int:
-    """Run BabelDOC under a pseudo-terminal so its live progress bars can be parsed."""
-    import pty
+    """Run BabelDOC and parse its live progress bars from a pipe (works on macOS, Linux and Windows)."""
+    # rich only draws live bars on a terminal; these make it treat the pipe as one.
+    env = dict(env or os.environ, COLUMNS="200", TERM="xterm", TTY_COMPATIBLE="1", TTY_INTERACTIVE="1",
+               PYTHONIOENCODING="utf-8")
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, env=env)
+    chunks: queue.Queue[bytes] = queue.Queue()
 
-    master, slave = pty.openpty()
-    env = dict(env or os.environ, COLUMNS="200", TERM="xterm")
-    proc = subprocess.Popen(cmd, stdout=slave, stderr=slave, stdin=subprocess.DEVNULL, env=env, close_fds=True)
-    os.close(slave)
+    def pump() -> None:  # a thread, because Windows pipes can't be select()ed
+        while (b := os.read(proc.stdout.fileno(), 65536)):
+            chunks.put(b)
+        chunks.put(b"")
+
+    threading.Thread(target=pump, daemon=True).start()
     pending, overall, stage, last_emit = "", 0.0, "준비 중", 0.0
-    with log_path.open("w") as log:
+    with log_path.open("w", encoding="utf-8") as log:
         while True:
             if cancel is not None and cancel.is_set() and proc.poll() is None:
                 proc.terminate()
@@ -202,15 +212,10 @@ def run_with_progress(cmd: list[str], log_path: Path, on_progress: ProgressFn,
                     proc.wait(timeout=10)
                 except subprocess.TimeoutExpired:
                     proc.kill()
-            ready, _, _ = select.select([master], [], [], 0.5)
-            if not ready:
-                if proc.poll() is not None:
-                    break
-                continue
             try:
-                chunk = os.read(master, 65536)
-            except OSError:
-                break
+                chunk = chunks.get(timeout=0.5)
+            except queue.Empty:
+                continue
             if not chunk:
                 break
             pending += _ANSI.sub("", chunk.decode("utf-8", errors="replace"))
@@ -234,7 +239,6 @@ def run_with_progress(cmd: list[str], log_path: Path, on_progress: ProgressFn,
             if now - last_emit > 0.5:
                 on_progress(stage, overall)
                 last_emit = now
-        os.close(master)
     rc = proc.wait()
     if cancel is not None and cancel.is_set():
         raise Cancelled()
@@ -269,7 +273,7 @@ def translate_pdf(src: Path, out_dir: Path | None = None, opts: Options | None =
     cmd = babeldoc_cmd(work_src, job_dir, opts, gfile, reuse)
     if ocr_applied:
         cmd.append(os.environ.get("KOPAPER_OCR_FLAG", "--auto-enable-ocr-workaround"))
-    (job_dir / "command.json").write_text(json.dumps(cmd[:cmd.index("--custom-system-prompt")] + ["<prompt>"] + cmd[cmd.index("--custom-system-prompt") + 2:], ensure_ascii=False, indent=1))
+    (job_dir / "command.json").write_text(json.dumps(cmd[:cmd.index("--custom-system-prompt")] + ["<prompt>"] + cmd[cmd.index("--custom-system-prompt") + 2:], ensure_ascii=False, indent=1), encoding="utf-8")
 
     env = dict(os.environ)
     if opts.restore_refs and opts.math_font_fix:  # skipping needs our launcher
@@ -284,7 +288,7 @@ def translate_pdf(src: Path, out_dir: Path | None = None, opts: Options | None =
     if on_progress:
         rc = run_with_progress(cmd, job_dir / "babeldoc.log", on_progress, cancel, env=env)
     elif quiet:
-        with (job_dir / "babeldoc.log").open("w") as log:
+        with (job_dir / "babeldoc.log").open("w", encoding="utf-8") as log:
             rc = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT, env=env).returncode
     else:
         rc = subprocess.run(cmd, env=env).returncode
@@ -315,5 +319,5 @@ def translate_pdf(src: Path, out_dir: Path | None = None, opts: Options | None =
         saved = glossary.user_path(pid) if glossary.user_path(pid).exists() else glossary.paper_path(pid)
 
     res = Result(pid, job_dir, mono, dual, saved, restored, ocr_applied, round(seconds, 1), returncode=rc, **usage_since(t0, run_tag(job_dir)))
-    (job_dir / "result.json").write_text(json.dumps(asdict(res), default=str, ensure_ascii=False, indent=1))
+    (job_dir / "result.json").write_text(json.dumps(asdict(res), default=str, ensure_ascii=False, indent=1), encoding="utf-8")
     return res
