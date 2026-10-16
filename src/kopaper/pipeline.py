@@ -215,6 +215,8 @@ def run_with_progress(cmd: list[str], log_path: Path, on_progress: ProgressFn,
             try:
                 chunk = chunks.get(timeout=0.5)
             except queue.Empty:
+                if proc.poll() is not None:  # exited, but a leftover child may still hold the pipe open
+                    break
                 continue
             if not chunk:
                 break
