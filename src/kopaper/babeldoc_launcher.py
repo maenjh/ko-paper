@@ -44,7 +44,37 @@ SKIP = json.loads(os.environ.get("KOPAPER_SKIP_REGIONS") or "[]")
 
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from il_fixes import merge_table_cells, skip_regions  # noqa: E402
+from il_fixes import merge_table_cells, skip_regions, stamped_verify  # noqa: E402
+
+# ---- Startup time: skip re-hashing cached fonts (~1s/run); compile the CoreML graph once (~4s/run on macOS) ----
+import babeldoc.assets.assets as _assets  # noqa: E402
+from babeldoc.const import get_cache_file_path  # noqa: E402
+
+_orig_verify = _assets.verify_file
+_assets.verify_file = lambda path, sha3_256: stamped_verify(path, sha3_256, _orig_verify)
+
+try:
+    import onnxruntime as _ort  # noqa: E402
+except ImportError:  # no layout model in this environment
+    _ort = None
+
+if _ort is not None:
+    _OrigSession = _ort.InferenceSession
+
+    class _CachedCoreMLSession(_OrigSession):
+        """BabelDOC asks for a bare "CoreMLExecutionProvider"; add a cache dir so the graph compiles once."""
+
+        def __init__(self, path_or_bytes, sess_options=None, providers=None, *a, **k):
+            if providers and providers[0] == "CoreMLExecutionProvider":
+                cache = {"ModelCacheDirectory": str(get_cache_file_path("", "coreml"))}
+                try:
+                    super().__init__(path_or_bytes, sess_options, [("CoreMLExecutionProvider", cache), *providers[1:]], *a, **k)
+                    return
+                except Exception as e:  # onnxruntime < 1.21 has no ModelCacheDirectory
+                    print(f"kopaper: CoreML model cache unavailable, compiling each run ({e})", file=sys.stderr)
+            super().__init__(path_or_bytes, sess_options, providers, *a, **k)
+
+    _ort.InferenceSession = _CachedCoreMLSession
 
 
 _prepared: set[int] = set()

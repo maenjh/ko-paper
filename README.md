@@ -277,7 +277,7 @@ BabelDOC 위에 다음 보정을 더한다. 모두 `src/kopaper/babeldoc_launche
 | `KOPAPER_CODEX_MODEL` | Codex 기본 모델 | `codex` 백엔드의 모델 |
 | `KOPAPER_CODEX_EFFORT` | `low` (opus 선택 시 `medium`) | `codex` 백엔드의 추론 강도 |
 | `KOPAPER_PORT` | `8787` | 프록시 포트 |
-| `KOPAPER_MAX_CONCURRENCY` | `4` | 동시 Claude 호출 수 |
+| `KOPAPER_MAX_CONCURRENCY` | `8` | 동시 Claude 호출 수. 호출 하나가 약 6초·300MB라서 16으로 올리면 번역 구간이 약 2배 더 빨라지고 메모리를 5GB 가까이 쓴다 |
 | `KOPAPER_EFFORT` | `medium` | API 백엔드의 effort |
 | `KOPAPER_EXTRA_MATH_FONTS` | Cambria Math | 수식으로 취급할 폰트 이름 정규식 |
 | `KOPAPER_DATA` | `./data` (스킬은 `~/.ko-paper/data`) | 작업·캐시·로그 위치 |

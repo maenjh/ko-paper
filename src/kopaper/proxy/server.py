@@ -7,7 +7,6 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-import os
 import re
 import sqlite3
 import time
@@ -18,12 +17,11 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from ..config import BACKEND, DATA_DIR, SOURCE_LANGS
+from ..config import BACKEND, DATA_DIR, MAX_CONCURRENCY, SOURCE_LANGS
 from .backends import BackendError, make_backend
 
 CACHE_DB = DATA_DIR / "proxy_cache.sqlite"
 USAGE_LOG = DATA_DIR / "proxy_usage.jsonl"
-MAX_CONCURRENCY = int(os.environ.get("KOPAPER_MAX_CONCURRENCY", "4"))
 
 BASE_SYSTEM = (
     "You are a professional translator of academic papers from {source} into Korean. "

@@ -1,10 +1,11 @@
 """Fixes applied to BabelDOC's intermediate representation before term extraction and translation.
 
 Pure Python and duck-typed (no BabelDOC import) so it can be unit-tested; babeldoc_launcher.py loads it
-inside BabelDOC's interpreter.
+inside BabelDOC's interpreter. stamped_verify is a startup-time fix that lives here for the same reason.
 """
 from __future__ import annotations
 
+import contextlib
 import sys
 
 
@@ -135,3 +136,24 @@ def merge_table_cells(docs) -> int:
     if merged_total:
         print(f"kopaper: merged {merged_total} table-cell lines", file=sys.stderr)
     return merged_total
+
+
+def stamped_verify(path, sha3_256: str, full_check) -> bool:
+    """Drop-in for BabelDOC's verify_file: trust the last full hash while size and mtime are unchanged.
+
+    BabelDOC re-hashes ~100 cached fonts on every run (~1s). The stamp next to the file stores
+    "<sha3> <size> <mtime_ns>"; any mismatch or I/O error falls back to full_check.
+    """
+    if not path.exists():
+        return False
+    st = path.stat()
+    stamp = path.with_name(path.name + ".verified")
+    tag = f"{sha3_256} {st.st_size} {st.st_mtime_ns}"
+    with contextlib.suppress(OSError):
+        if stamp.read_text() == tag:
+            return True
+    ok = full_check(path, sha3_256)
+    if ok:
+        with contextlib.suppress(OSError):
+            stamp.write_text(tag)
+    return ok

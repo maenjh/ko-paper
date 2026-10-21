@@ -120,7 +120,8 @@ def main(argv: list[str] | None = None) -> int:
     g = t.add_mutually_exclusive_group()
     g.add_argument("--mono-only", action="store_true", help="only the Korean PDF")
     g.add_argument("--dual-only", action="store_true", help="only the side-by-side EN/KO PDF")
-    t.add_argument("--qps", type=int, default=4, help="parallel requests (default 4)")
+    t.add_argument("--qps", type=int, default=4,
+                   help="requests started per second (default 4); parallel calls: KOPAPER_MAX_CONCURRENCY")
     t.add_argument("--reextract-glossary", action="store_true", help="ignore this paper's saved glossary")
     t.add_argument("--formula-hint", action="store_true", help="BabelDOC formula placeholder hint (experimental)")
     t.add_argument("--no-math-font-fix", action="store_true", help="don't treat Cambria Math as formula font")
