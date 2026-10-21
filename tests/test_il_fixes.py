@@ -48,3 +48,22 @@ def test_skip_regions_blanks_reference_paragraphs():
     page = NS(page_number=3, pdf_paragraph=[ref, body], page_layout=[])
     n = skip_regions(NS(page=[page]), [{"page": 3, "x0": 0, "x1": 300, "y0": 0, "y1": 400}])
     assert n == 1 and ref.unicode is None and body.unicode == "Conclusion text"
+
+
+def test_stamped_verify_rehashes_only_when_the_file_changes(tmp_path):
+    from kopaper.il_fixes import stamped_verify
+
+    f = tmp_path / "font.ttf"
+    f.write_bytes(b"abc")
+    calls = []
+
+    def full(path, sha):
+        calls.append(sha)
+        return sha == "good"
+
+    assert stamped_verify(f, "bad", full) is False and calls == ["bad"]
+    assert stamped_verify(f, "good", full) is True and calls == ["bad", "good"]
+    assert stamped_verify(f, "good", full) is True and calls == ["bad", "good"]  # stamped: no rehash
+    f.write_bytes(b"abcd")
+    assert stamped_verify(f, "good", full) is True and calls == ["bad", "good", "good"]  # size changed: rehash
+    assert stamped_verify(tmp_path / "missing", "good", full) is False and len(calls) == 3

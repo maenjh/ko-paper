@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import glossary
-from .config import BABELDOC_BIN, DATA_DIR, JOBS_DIR, PROMPTS_DIR, PROXY_URL, SOURCE_LANGS
+from .config import BABELDOC_BIN, DATA_DIR, JOBS_DIR, MAX_CONCURRENCY, PROMPTS_DIR, PROXY_URL, SOURCE_LANGS
 
 
 @dataclass
@@ -130,7 +130,9 @@ def babeldoc_cmd(src: Path, job_dir: Path, opts: Options, glossary_file: Path | 
         "--custom-system-prompt", system_prompt(opts.lang_in),
         "--min-text-length", str(opts.min_text_length),
         "--translate-table-text",
-        "--qps", str(opts.qps), "--pool-max-workers", str(opts.qps),
+        # qps caps how many requests start per second; workers cap how many are in flight.
+        # Workers = qps left 3/4 of the proxy's concurrency idle, so give BabelDOC at least that many.
+        "--qps", str(opts.qps), "--pool-max-workers", str(max(opts.qps, MAX_CONCURRENCY)),
         "--no-watermark", "--output", str(job_dir),
     ]
     if glossary_file:
